@@ -104,13 +104,11 @@
             min-width: 160px;
         }
         
-        /* عرض اسم العميل أكبر بنسبة 50% */
         .field-client {
-            flex: 1.5;  /* 50% أكبر من الحقل العادي */
+            flex: 1.5;
             min-width: 220px;
         }
         
-        /* عرض إجمالي التعاقد أصغر بنسبة 50% */
         .field-total {
             flex: 0.5;
             min-width: 140px;
@@ -252,7 +250,6 @@
             background: #f1f9ff;
         }
 
-        /* توقيع العميل */
         .client-signature {
             margin-top: 2rem;
             padding: 1rem 0.5rem 0.5rem;
@@ -280,7 +277,6 @@
             color: #5d7a8c;
         }
 
-        /* توقيع المطور */
         .signature-card {
             position: fixed;
             bottom: 20px;
@@ -420,80 +416,77 @@
 <script>
     // ------------------- الأرقام الإنجليزية -------------------
     function formatNumber(num, decimals = 3) {
+        if (num === undefined || isNaN(num)) num = 0;
         return num.toFixed(decimals).toString();
     }
     
-    // ------------------- منطق الأقساط المعدل للشريحة الصغرى 25% + 4 أقساط -------------------
+    // شروط الشرائح
     const PAYMENT_THRESHOLD = 500;
     const TIER_Q1 = 501;    // 501 - 1500
     const TIER_R1 = 1501;   // 1501 - 4000
     const TIER_S1 = 4001;   // 4001+
 
-    // عدد الدفعات (الأقساط بعد الدفعة المقدمة)
     function getInstallmentsCount(amount) {
         if (amount > PAYMENT_THRESHOLD) {
-            if (amount >= TIER_S1) return 12;       // 4001+ -> 12 قسطاً بعد الدفعة 30%
-            else if (amount >= TIER_R1) return 5;   // 1501-4000 -> 5 أقساط بعد الدفعة 50%
-            else if (amount >= TIER_Q1) return 4;   // 501-1500 -> 4 أقساط بعد الدفعة 25%
+            if (amount >= TIER_S1) return 12;
+            else if (amount >= TIER_R1) return 5;
+            else if (amount >= TIER_Q1) return 4;
         }
         return 0;
     }
     
-    // نسبة الدفعة المقدمة بناءً على عدد الأقساط (بعد الدفعة)
     function getDownPaymentPercentage(installmentsCount) {
         if (installmentsCount === 12) return 0.30;
         if (installmentsCount === 5) return 0.50;
-        if (installmentsCount === 4) return 0.25;   // الشريحة الصغرى 25%
+        if (installmentsCount === 4) return 0.25;
         return 0;
     }
     
-    function getDownPaymentDetails(amount, installmentsCount) {
+    // الدفعة المقدمة: تحويل إلى رقم صحيح (حذف الكسور) بدون أي إشعار
+    function getDownPaymentAmountInt(totalAmount, installmentsCount) {
         const percentage = getDownPaymentPercentage(installmentsCount);
-        return { percentage, amount: amount * percentage };
+        const rawDown = totalAmount * percentage;
+        return Math.floor(rawDown);
     }
     
-    // القسط الثابت بعد الدفعة المقدمة مع ROUNDUP لأقرب 0.1
-    function getFixedInstallment(total, downPayment, count) {
-        if (count === 0) return 0;
-        const remainder = total - downPayment;
-        if (remainder <= 0) return 0;
-        const raw = remainder / count;
-        return Math.ceil(raw * 10) / 10;
-    }
-    
-    // توليد جدول الأقساط الشهرية بناءً على تاريخ بدء محدد (يوم/شهر/سنة)
-    function generateSchedule(remainingAmount, installmentsCount, fixedInstallment, startDate) {
+    // توليد جدول الأقساط: الأقساط الأولى تكون numbers صحيحة (floor) والأخير يأخذ الباقي
+    function generateSchedule(totalAmount, downPaymentInt, installmentsCount, startDate) {
+        if (installmentsCount === 0) return [];
+        let remaining = totalAmount - downPaymentInt;
+        if (remaining <= 0) return [];
+        const rawMonthly = remaining / installmentsCount;
         const schedule = [];
-        if (installmentsCount === 0) return schedule;
-        
-        let remaining = remainingAmount;
-        for (let i = 1; i <= installmentsCount; i++) {
-            let installmentValue = fixedInstallment;
-            if (i === installmentsCount) {
-                // ضبط القسط الأخير ليتطابق مع المتبقي
-                const sumPrevious = fixedInstallment * (installmentsCount - 1);
-                installmentValue = parseFloat((remaining - sumPrevious).toFixed(2));
-                if (installmentValue < 0) installmentValue = fixedInstallment;
-            }
-            // حساب تاريخ الاستحقاق: startDate + (i-1) شهر
+        let sumOfInstallments = 0;
+        for (let i = 1; i <= installmentsCount - 1; i++) {
+            let installmentValue = Math.floor(rawMonthly);
+            if (installmentValue < 0) installmentValue = 0;
+            sumOfInstallments += installmentValue;
             const dueDate = new Date(startDate);
             dueDate.setMonth(dueDate.getMonth() + (i - 1));
-            // تنسيق التاريخ كـ يوم/شهر/سنة (أرقام إنجليزية)
             const day = dueDate.getDate().toString().padStart(2, '0');
             const month = (dueDate.getMonth() + 1).toString().padStart(2, '0');
             const year = dueDate.getFullYear();
-            const formattedDate = `${day}/${month}/${year}`;
-            
             schedule.push({
                 number: i,
-                dueDate: formattedDate,
-                amount: installmentValue.toFixed(2)
+                dueDate: `${day}/${month}/${year}`,
+                amount: installmentValue.toFixed(3)
             });
         }
+        let lastInstallment = remaining - sumOfInstallments;
+        if (lastInstallment < 0) lastInstallment = 0;
+        const lastDate = new Date(startDate);
+        lastDate.setMonth(lastDate.getMonth() + (installmentsCount - 1));
+        const lastDay = lastDate.getDate().toString().padStart(2, '0');
+        const lastMonth = (lastDate.getMonth() + 1).toString().padStart(2, '0');
+        const lastYear = lastDate.getFullYear();
+        schedule.push({
+            number: installmentsCount,
+            dueDate: `${lastDay}/${lastMonth}/${lastYear}`,
+            amount: lastInstallment.toFixed(3)
+        });
         return schedule;
     }
     
-    // تحديد تاريخ بدء الأقساط (إذا لم يحدد المستخدم، يكون الشهر التالي من تاريخ اليوم أو تاريخ العملية)
     function getEffectiveStartDate(processDateValue, manualDateValue) {
         if (manualDateValue) {
             const parsed = new Date(manualDateValue);
@@ -504,9 +497,7 @@
             const parsed = new Date(processDateValue);
             if (!isNaN(parsed.getTime())) baseDate = parsed;
         }
-        // الشهر التالي من نفس اليوم (إن وجد، وإلا آخر يوم)
         let nextMonth = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, baseDate.getDate());
-        // إذا كان اليوم غير موجود في الشهر التالي (مثل 31) نأخذ آخر يوم
         if (nextMonth.getMonth() !== (baseDate.getMonth() + 1) % 12) {
             nextMonth = new Date(baseDate.getFullYear(), baseDate.getMonth() + 2, 0);
         }
@@ -520,10 +511,10 @@
         installmentsCount: 0,
         downPaymentAmount: 0,
         downPercentageText: '',
-        fixedInstallment: 0,
         schedule: [],
         todayDateStr: '',
-        startDateStr: ''
+        startDateStr: '',
+        currency: 'د.ك'
     };
     
     function updateCalculationAndDisplay() {
@@ -549,7 +540,6 @@
         let installmentsCount = 0;
         let downPaymentAmount = 0;
         let downPercentageText = '';
-        let fixedInstallment = 0;
         let schedule = [];
         
         const isInstallmentEligible = totalAmount > PAYMENT_THRESHOLD;
@@ -560,17 +550,15 @@
         } else {
             installmentsCount = getInstallmentsCount(totalAmount);
             if (installmentsCount > 0) {
-                const down = getDownPaymentDetails(totalAmount, installmentsCount);
-                downPaymentAmount = down.amount;
-                const percentVal = down.percentage * 100;
+                downPaymentAmount = getDownPaymentAmountInt(totalAmount, installmentsCount);
+                const percentage = getDownPaymentPercentage(installmentsCount);
+                const percentVal = percentage * 100;
                 downPercentageText = `${percentVal}% من المبلغ`;
-                if (installmentsCount === 4 && down.percentage === 0.25) downPercentageText = "25% (دفعة أولى)";
+                if (installmentsCount === 4 && percentage === 0.25) downPercentageText = "25% (دفعة أولى)";
                 if (installmentsCount === 5) downPercentageText = "50% من المبلغ";
                 if (installmentsCount === 12) downPercentageText = "30% من المبلغ";
                 
-                fixedInstallment = getFixedInstallment(totalAmount, downPaymentAmount, installmentsCount);
-                const remainingAfterDown = totalAmount - downPaymentAmount;
-                schedule = generateSchedule(remainingAfterDown, installmentsCount, fixedInstallment, effectiveStart);
+                schedule = generateSchedule(totalAmount, downPaymentAmount, installmentsCount, effectiveStart);
                 paymentMethod = `سداد المبلغ على دفعات (تقسيط مرن) - دفعة أولى ${downPercentageText}`;
             } else {
                 paymentMethod = "مبلغ غير مؤهل للشرائح المحددة";
@@ -584,16 +572,16 @@
             installmentsCount,
             downPaymentAmount,
             downPercentageText,
-            fixedInstallment,
             schedule,
             todayDateStr: todayFormatted,
-            startDateStr: startDateStr,
+            startDateStr,
             currency: 'د.ك'
         };
         
         const resultsDiv = document.getElementById('resultsArea');
         if (!resultsDiv) return;
         
+        // توقيع العميل (سيتم وضعه في الأسفل)
         const clientSignatureHtml = `
             <div class="client-signature">
                 <span><i class="fas fa-pen-alt"></i> توقيع العميل:</span>
@@ -620,7 +608,6 @@
             return;
         }
         
-        // بناء جدول الأقساط مع ترتيب الأعمدة: # ثم تاريخ الاستحقاق ثم المبلغ (من اليمين لليسار في RTL)
         let scheduleHtml = '';
         if (schedule.length > 0) {
             let rowsHtml = '';
@@ -652,6 +639,7 @@
             `;
         }
         
+        // ترتيب العناصر: البطاقات، ثم الجدول، ثم توقيع العميل، ثم footer-note
         resultsDiv.innerHTML = `
             <div class="result-summary">
                 <div class="info-card">
@@ -671,7 +659,7 @@
                     <i class="fas fa-gem"></i> <strong>الدفعة المقدمة (أولى)</strong><br> ${downPercentageText} (${formatNumber(downPaymentAmount)} د.ك)
                 </div>
                 <div class="info-card" style="background:#eef5ff;">
-                    <i class="fas fa-equals"></i> <strong>القسط الشهري الثابت</strong><br> ${fixedInstallment.toFixed(2)} د.ك
+                    <i class="fas fa-equals"></i> <strong>القسط الشهري الثابت</strong><br> ${schedule.length > 0 ? schedule[0].amount : '0'} د.ك
                 </div>
             </div>
             ${scheduleHtml}
@@ -682,7 +670,7 @@
         `;
     }
     
-    // ------------------- تصدير PDF (بدون عبارة إضافية) -------------------
+    // ------------------- تصدير PDF (بدون ملاحظات الكسور) -------------------
     async function exportFullPDF() {
         updateCalculationAndDisplay();
         await new Promise(r => setTimeout(r, 80));
@@ -748,7 +736,7 @@
                     <p><strong>🔄 طريقة السداد:</strong> ${data.paymentMethod}</p>
                     ${data.installmentsCount > 0 ? `<p><strong>📆 عدد الأقساط (بعد الدفعة الأولى):</strong> ${data.installmentsCount} قسط</p>` : ''}
                     ${data.installmentsCount > 0 ? `<p><strong>💎 الدفعة المقدمة:</strong> ${data.downPercentageText} (${formatNumber(data.downPaymentAmount)} د.ك)</p>` : ''}
-                    ${data.installmentsCount > 0 ? `<p><strong>📈 القسط الشهري الثابت:</strong> ${data.fixedInstallment.toFixed(2)} د.ك</p>` : '<p style="color:#155724;">✅ سيتم سداد المبلغ بالكامل نقداً بدون أقساط.</p>'}
+                    ${data.installmentsCount > 0 ? `<p><strong>📈 القسط الشهري الثابت:</strong> ${data.schedule.length > 0 ? data.schedule[0].amount : '0'} د.ك</p>` : '<p style="color:#155724;">✅ سيتم سداد المبلغ بالكامل نقداً بدون أقساط.</p>'}
                     ${data.installmentsCount > 0 ? `<p><strong>🗓 تبدأ الأقساط من:</strong> ${data.startDateStr}</p>` : ''}
                 </div>
                 ${isInstallment && scheduleRows ? `
@@ -756,7 +744,7 @@
                 <table style="width:100%; border-collapse:collapse; margin-top:12px;">
                     <thead><tr style="background:#0d47a1; color:white;"><th style="padding:10px;"># القسط</th><th>تاريخ الاستحقاق</th><th>المبلغ (د.ك)</th></tr></thead>
                     <tbody>${scheduleRows}</tbody>
-                </table>
+                 </table>
                 ` : '<div style="background:#e9ecef; padding:12px; border-radius:16px;">لا يوجد جدول أقساط (عملية نقدية).</div>'}
                 ${signatureBlock}
             `;
@@ -811,11 +799,9 @@
         });
     }
     
-    // ربط الأزرار وتعيين القيمة الافتراضية لتاريخ بدء الأقساط (اليوم الأول من الشهر التالي)
     document.getElementById('calculateBtn').addEventListener('click', updateCalculationAndDisplay);
     document.getElementById('exportPdfBtn').addEventListener('click', exportFullPDF);
     
-    // تعيين التاريخ الافتراضي لبداية الأقساط: اليوم الأول من الشهر التالي
     const todayDefault = new Date();
     const nextMonthFirst = new Date(todayDefault.getFullYear(), todayDefault.getMonth() + 1, 1);
     const year = nextMonthFirst.getFullYear();
