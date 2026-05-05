@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>كلينك شانزليزيه | نظام الأقساط 2026</title>
+    <!-- مكتبات PDF والتصوير -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- أيقونات Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #eef2f7 0%, #d9e2ec 100%);
+            font-family: 'Segoe UI', 'Tajawal', 'Cairo', system-ui, sans-serif;
+            padding: 2rem 1.5rem 3rem;
+            min-height: 100vh;
+            color: #1e2f3e;
+        }
+
+        /* حاوية رئيسية */
+        .clinic-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* بطاقة الحاسبة الرئيسية */
+        .calculator-card {
+            background: #ffffff;
+            border-radius: 48px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            transition: 0.2s;
+            margin-bottom: 30px;
+        }
+
+        /* رأس العيادة */
+        .clinic-header {
+            background: linear-gradient(135deg, #d32f2f, #1b5e20, #0d47a1);
+            padding: 1.2rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            color: white;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-area img {
+            height: 70px;
+            width: auto;
+            border-radius: 20px;
+            background: white;
+            padding: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .clinic-title h2 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .clinic-title p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .year-badge {
+            background: rgba(255,255,240,0.2);
+            backdrop-filter: blur(4px);
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        /* محتوى الحاسبة */
+        .calc-body {
+            padding: 2rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            background: #f8fafd;
+            padding: 1.5rem;
+            border-radius: 32px;
+        }
+
+        .field {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .field label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #0b3b4f;
+        }
+
+        .field input, .field select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #cbdbe0;
+            border-radius: 60px;
+            font-size: 1rem;
+            transition: 0.2s;
+            font-family: inherit;
+            background: white;
+        }
+
+        .field input:focus, .field select:focus {
+            border-color: #2196F3;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(33,150,243,0.2);
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(95deg, #0d47a1, #1976d2);
+            color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(95deg, #0b3c7a, #0d47a1);
+        }
+
+        .btn-pdf {
+            background: linear-gradient(95deg, #d32f2f, #b71c1c);
+            color: white;
+        }
+
+        .btn-pdf:hover {
+            background: #b71c1c;
+            transform: translateY(-2px);
+        }
+
+        .results-panel {
+            background: #ffffff;
+            border-radius: 32px;
+            border: 1px solid #e0edf2;
+            padding: 1.2rem;
+            margin-top: 0.5rem;
+        }
+
+        .result-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.2rem;
+        }
+
+        .info-card {
+            background: #f9fefd;
+            border-radius: 24px;
+            padding: 1rem 1.2rem;
+            border-right: 6px solid #1b5e20;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+
+        .info-card.red-edge {
+            border-right-color: #d32f2f;
+        }
+
+        .info-card.blue-edge {
+            border-right-color: #1976d2;
+        }
+
+        .installment-plan {
+            margin-top: 1.8rem;
+            background: #fef9e8;
+            border-radius: 32px;
+            padding: 1rem;
+        }
+
+        .installment-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .installment-table th {
+            background: #1e3a5f;
+            color: white;
+            padding: 12px;
+            font-weight: 600;
+        }
+
+        .installment-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #dee2e6;
+            text-align: center;
+        }
+
+        .installment-table tr:hover {
+            background: #f1f9ff;
+        }
+
+        /* تذييل الصفحة */
+        .footer-note {
+            margin-top: 20px;
+            font-size: 0.75rem;
+            text-align: center;
+            color: #5d7a8c;
+        }
+
+        /* توقيع المطور (ثابت) */
+        .signature-card {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #FF6E00, #2196F3);
+            color: white;
+            padding: 10.5px 17.5px;
+            border-radius: 8.5px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 1000;
+            animation: float 6s ease-in-out infinite;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.2);
+            text-decoration: none;
+            color: inherit;
+            display: inline-block;
+        }
+        .signature-card:hover { 
+            transform: scale(1.05); 
+            box-shadow: 0 12px 35px rgba(0,0,0,0.4); 
+        }
+        @keyframes float { 
+            0% { transform: translateY(0px); } 
+            50% { transform: translateY(-15px); } 
+            100% { transform: translateY(0px); } 
+        }
+        .signature-card::before {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px; right: -2px; bottom: -2px;
+            background: linear-gradient(135deg, #80EF80, #2196F3);
+            border-radius: 14px;
+            z-index: -1;
+            animation: borderGlow 3s linear infinite;
+            background-size: 400%;
+        }
+        @keyframes borderGlow { 
+            0% { background-position: 0% 50%; } 
+            50% { background-position: 100% 50%; } 
+            100% { background-position: 0% 50%; } 
+        }
+        .signature-card .name { 
+            font-size: 0.95rem; 
+            font-weight: 700; 
+            margin-bottom: 5px; 
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3); 
+        }
+        .signature-card .title { 
+            font-size: 0.7rem; 
+            opacity: 0.9; 
+            font-weight: 500; 
+        }
+        @media (max-width: 768px) { 
+            .signature-card { 
+                position: relative; 
+                bottom: auto; 
+                left: auto; 
+                margin: 30px auto 0; 
+                width: fit-content; 
+                animation: none; 
+                display: inline-flex;
+                justify-content: center;
+            } 
+        }
+        @media print {
+            .signature-card { display: none; }
+        }
+
+        /* تنسيق للشاشات الصغيرة */
+        @media (max-width: 700px) {
+            .calc-body { padding: 1rem; }
+            .btn-group { justify-content: center; }
+        }
+        /* ضمان عرض الأرقام بالهندية غربية (انجلش) */
+        .installment-table td, .info-card, .result-value, .field input, .field select {
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
+    </style>
+</head>
+<body>
+<div class="clinic-wrapper">
+    <div class="calculator-card">
+        <div class="clinic-header">
+            <div class="logo-area">
+                <img src="https://i.postimg.cc/ZK4kBD7D/klynk.jpg" alt="كلينك شانزليزيه" onerror="this.src='https://placehold.co/80x80?text=KLYNK'">
+                <div class="clinic-title">
+                    <h2>كلينك شانزليزيه</h2>
+                    <p>نظام الأقساط المتكامل</p>
+                </div>
+            </div>
+            <div class="year-badge">
+                <i class="fas fa-calendar-alt"></i> السنة المالية 2026
+            </div>
+        </div>
+
+        <div class="calc-body">
+            <div class="input-group">
+                <div class="field">
+                    <label><i class="fas fa-user"></i> اسم العميل</label>
+                    <input type="text" id="clientName" placeholder="أدخل الاسم الكامل" value="أحمد السعد">
+                </div>
+                <div class="field">
+                    <label><i class="fas fa-coins"></i> إجمالي العملية (د.ك)</label>
+                    <input type="number" id="totalAmount" placeholder="مثال: 2500" value="2500" step="any">
+                </div>
+                <div class="field">
+                    <label><i class="fas fa-calendar-plus"></i> تاريخ بدء العملية (اختياري)</label>
+                    <input type="date" id="processStartDate" placeholder="اختر تاريخ">
+                </div>
+                <div class="field">
+                    <label><i class="fas fa-calendar-alt"></i> بداية أول قسط (شهر/سنة)</label>
+                    <input type="month" id="firstInstallmentMonth" value="">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="calculateBtn"><i class="fas fa-calculator"></i> احسب الأقساط</button>
+                    <button class="btn btn-pdf" id="exportPdfBtn"><i class="fas fa-file-pdf"></i> تصدير PDF</button>
+                </div>
+            </div>
+
+            <!-- منطقة عرض النتائج -->
+            <div id="resultsArea" class="results-panel">
+                <div style="text-align:center; padding:40px; color:#5f8aa7;">
+                    <i class="fas fa-hand-holding-usd fa-3x"></i>
+                    <p>📊 أدخل المبلغ واضغط "احسب الأقساط"</p>
+                </div>
+            </div>
+            <div class="footer-note">
+                <i class="fas fa-info-circle"></i> تطبق الشروط: عند تجاوز 500 د.ك يتم التقسيط. عدد الدفعات: 4 / 5 / 12 حسب المبلغ. دفعة مقدمة 30% (12 قسط) أو 50% (5 أقساط) أو 0% (4 أقساط).
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- التوقيع الثابت -->
+<a href="https://yasser-q8.github.io/myprofile/#" class="signature-card" target="_blank" rel="noopener noreferrer">
+    <div class="name">Yasser Elkhateeb</div>
+    <div class="title">مطور البرنامج 67011143</div>
+</a>
+
+<script>
+    // ----- مساعدات الأرقام الإنجليزية فقط -----
+    function formatNumber(num, decimals = 3) {
+        // إظهار الأرقام بأسلوب غربي (0-9) بدون تحويل شرقي
+        return num.toFixed(decimals).toString();
+    }
+
+    // ----- منطق الأقساط (مطابق لملف Excel) -----
+    const PAYMENT_THRESHOLD = 500;
+    const TIER_Q1 = 501;
+    const TIER_R1 = 1501;
+    const TIER_S1 = 4001;
+
+    function getInstallmentsCount(amount) {
+        if (amount > PAYMENT_THRESHOLD) {
+            if (amount >= TIER_S1) return 12;
+            else if (amount >= TIER_R1) return 5;
+            else if (amount >= TIER_Q1) return 4;
+        }
+        return 0;
+    }
+
+    function getDownPaymentDetails(amount, installmentsCount) {
+        let percentage = 0;
+        if (installmentsCount === 12) percentage = 0.30;
+        else if (installmentsCount === 5) percentage = 0.50;
+        else if (installmentsCount === 4) percentage = 0.00;
+        return { percentage, amount: amount * percentage };
+    }
+
+    function getFixedInstallment(total, downPayment, count) {
+        if (count === 0) return 0;
+        const remainder = total - downPayment;
+        if (remainder <= 0) return 0;
+        const raw = remainder / count;
+        return Math.ceil(raw * 10) / 10;
+    }
+
+    // توليد جدول الأقساط بناءً على شهر بدء الأقساط (بتنسيق "YYYY-MM" أو الأول من الشهر التالي)
+    function generateSchedule(totalAmount, downPayment, installmentsCount, fixedInstallment, startMonthDate) {
+        // startMonthDate هو كائن Date يمثل أول يوم من شهر بداية الأقساط (اليوم الأول)
+        const schedule = [];
+        if (installmentsCount === 0) return schedule;
+        let remainingAfterDown = totalAmount - downPayment;
+        // إنشاء الأقساط مع الضبط الأخير
+        for (let i = 1; i <= installmentsCount; i++) {
+            let installmentValue = fixedInstallment;
+            if (i === installmentsCount) {
+                const totalPaidInstallments = fixedInstallment * (installmentsCount - 1);
+                installmentValue = parseFloat((remainingAfterDown - totalPaidInstallments).toFixed(2));
+                if (installmentValue < 0) installmentValue = fixedInstallment;
+            }
+            const currentMonthDate = new Date(startMonthDate);
+            currentMonthDate.setMonth(startMonthDate.getMonth() + (i - 1));
+            const monthName = currentMonthDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+            // نضمن أن التاريخ يعرض أرقاماً إنجليزية (لكن monthName نص عربي، السنة ستكون أرقاماً غربية)
+            schedule.push({
+                installmentNumber: i,
+                dueDate: monthName,
+                amount: installmentValue.toFixed(2)
+            });
+        }
+        return schedule;
+    }
+
+    // تحديد تاريخ بدء الأقساط (الشهر التالي بناءً على تاريخ اليوم أو تاريخ العملية)
+    function getEffectiveStartDate(processDateValue, manualMonthValue) {
+        // manualMonthValue له الأولوية إن وجد (شهر وسنة من <input type="month">)
+        if (manualMonthValue && manualMonthValue.match(/^\d{4}-\d{2}$/)) {
+            const [year, month] = manualMonthValue.split('-');
+            return new Date(parseInt(year), parseInt(month) - 1, 1);
+        }
+        // وإلا: نعتمد على تاريخ بدء العملية إذا وجد
+        let baseDate = new Date(); // اليوم
+        if (processDateValue) {
+            const parsed = new Date(processDateValue);
+            if (!isNaN(parsed.getTime())) baseDate = parsed;
+        }
+        // الشهر التالي: اليوم الأول من الشهر التالي
+        const nextMonthFirst = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 1);
+        return nextMonthFirst;
+    }
+
+    // متغير لتخزين آخر بيانات الحساب للـ PDF
+    let lastCalcData = {
+        clientName: '',
+        totalAmount: 0,
+        paymentMethod: '',
+        installmentsCount: 0,
+        downPaymentAmount: 0,
+        downPercentageText: '',
+        fixedInstallment: 0,
+        schedule: [],
+        todayDateStr: '',
+        startDateStr: ''
+    };
+
+    // دالة التحديث الرئيسية
+    function updateCalculationAndDisplay() {
+        const amountInput = document.getElementById('totalAmount');
+        const clientNameInput = document.getElementById('clientName');
+        const processDateInput = document.getElementById('processStartDate');
+        const manualMonthInput = document.getElementById('firstInstallmentMonth');
+
+        let totalAmount = parseFloat(amountInput.value);
+        if (isNaN(totalAmount) || totalAmount < 0) totalAmount = 0;
+        totalAmount = parseFloat(totalAmount.toFixed(3));
+        const clientName = clientNameInput.value.trim() || "عميل غير مسجل";
+
+        // تاريخ اليوم لعرضه بجانب الاسم
+        const today = new Date();
+        const todayFormatted = `${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}`;
+        
+        // تاريخ بدء الأقساط الفعال
+        const processDate = processDateInput.value;
+        const manualMonth = manualMonthInput.value;
+        const effectiveStartDate = getEffectiveStartDate(processDate, manualMonth);
+        const startDateStr = effectiveStartDate.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long' });
+
+        let paymentMethod = '';
+        let installmentsCount = 0;
+        let downPaymentAmount = 0;
+        let downPercentage = 0;
+        let fixedInstallment = 0;
+        let downPercentageText = '';
+        let schedule = [];
+
+        const isInstallmentEligible = totalAmount > PAYMENT_THRESHOLD;
+
+        if (!isInstallmentEligible) {
+            paymentMethod = "سداد كامل المبلغ نقداً (بدون أقساط)";
+            installmentsCount = 0;
+        } else {
+            paymentMethod = "سداد المبلغ على دفعات (تقسيط مرن)";
+            installmentsCount = getInstallmentsCount(totalAmount);
+            if (installmentsCount > 0) {
+                const down = getDownPaymentDetails(totalAmount, installmentsCount);
+                downPaymentAmount = down.amount;
+                downPercentage = down.percentage;
+                if (installmentsCount === 12) downPercentageText = "30% من المبلغ";
+                else if (installmentsCount === 5) downPercentageText = "50% من المبلغ";
+                else if (installmentsCount === 4) downPercentageText = "لا توجد دفعة مقدمة (0%)";
+                fixedInstallment = getFixedInstallment(totalAmount, downPaymentAmount, installmentsCount);
+                schedule = generateSchedule(totalAmount, downPaymentAmount, installmentsCount, fixedInstallment, effectiveStartDate);
+            } else {
+                paymentMethod = "مبلغ غير مؤهل للشرائح المحددة";
+            }
+        }
+
+        // تحديث التخزين
+        lastCalcData = {
+            clientName,
+            totalAmount,
+            paymentMethod,
+            installmentsCount,
+            downPaymentAmount,
+            downPercentageText,
+            fixedInstallment,
+            schedule,
+            todayDateStr: todayFormatted,
+            startDateStr: startDateStr,
+            currency: 'د.ك'
+        };
+
+        // عرض النتائج في الواجهة
+        const resultsDiv = document.getElementById('resultsArea');
+        if (!resultsDiv) return;
+
+        if (!isInstallmentEligible || installmentsCount === 0) {
+            resultsDiv.innerHTML = `
+                <div class="result-summary">
+                    <div class="info-card red-edge">
+                        <i class="fas fa-user-circle"></i> <strong>العميل:</strong> ${escapeHtml(clientName)}<br>
+                        <i class="fas fa-calendar-day"></i> <strong>تاريخ التقرير:</strong> ${todayFormatted}<br>
+                        <i class="fas fa-money-bill-wave"></i> <strong>المبلغ الإجمالي:</strong> ${formatNumber(totalAmount)} د.ك<br>
+                        <i class="fas fa-hand-holding-usd"></i> <strong>طريقة السداد:</strong> ${paymentMethod}
+                    </div>
+                    <div class="info-card blue-edge">
+                        <i class="fas fa-check-circle" style="color:#2e7d32;"></i> يتم دفع المبلغ بالكامل نقداً.<br> لا توجد أقساط شهرية.
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // بناء جدول الأقساط
+        let scheduleHtml = '';
+        if (schedule.length > 0) {
+            scheduleHtml = `
+                <div class="installment-plan">
+                    <h4 style="margin-bottom:12px;"><i class="fas fa-calendar-week"></i> خطة الأقساط الشهرية (تبدأ من ${startDateStr})</h4>
+                    <table class="installment-table" dir="ltr" style="text-align:center;">
+                        <thead>
+                            <tr><th>#</th><th>تاريخ الاستحقاق</th><th>القيمة (د.ك)</th></tr>
+                        </thead>
+                        <tbody>
+                            ${schedule.map(item => `<tr><td>${item.installmentNumber}</td><td>${item.dueDate}</td><td>${item.amount}</td></tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        resultsDiv.innerHTML = `
+            <div class="result-summary">
+                <div class="info-card">
+                    <i class="fas fa-id-card"></i> <strong>العميل</strong><br> ${escapeHtml(clientName)}<br>
+                    <i class="fas fa-calendar-alt"></i> <strong>تاريخ التقرير:</strong> ${todayFormatted}
+                </div>
+                <div class="info-card red-edge">
+                    <i class="fas fa-chart-line"></i> <strong>إجمالي العملية</strong><br> ${formatNumber(totalAmount)} د.ك
+                </div>
+                <div class="info-card blue-edge">
+                    <i class="fas fa-credit-card"></i> <strong>طريقة السداد</strong><br> ${paymentMethod}
+                </div>
+                <div class="info-card">
+                    <i class="fas fa-layer-group"></i> <strong>عدد الدفعات</strong><br> ${installmentsCount} قسط
+                </div>
+                <div class="info-card">
+                    <i class="fas fa-gem"></i> <strong>الدفعة المقدمة</strong><br> ${downPercentageText} (${formatNumber(downPaymentAmount)} د.ك)
+                </div>
+                <div class="info-card" style="background:#eef5ff;">
+                    <i class="fas fa-equals"></i> <strong>القسط الثابت</strong><br> ${fixedInstallment.toFixed(2)} د.ك / شهرياً
+                </div>
+            </div>
+            ${scheduleHtml}
+            <div class="footer-note" style="margin-top:12px;">
+                تطبق الشروط وفق سياسة كلينك شانزليزيه.
+            </div>
+        `;
+    }
+
+    // دالة تصدير PDF مع إزالة النصوص المطلوبة
+    async function exportFullPDF() {
+        updateCalculationAndDisplay(); // تحديث البيانات
+        await new Promise(r => setTimeout(r, 80));
+
+        const { jsPDF } = window.jspdf;
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.top = '0';
+        container.style.left = '-9999px';
+        container.style.width = '794px';
+        container.style.background = '#ffffff';
+        container.style.direction = 'rtl';
+        container.style.fontFamily = "'Segoe UI', 'Tajawal', sans-serif";
+        document.body.appendChild(container);
+
+        function createPage() {
+            const pageDiv = document.createElement('div');
+            pageDiv.style.width = '794px';
+            pageDiv.style.padding = '30px';
+            pageDiv.style.background = '#ffffff';
+            pageDiv.style.boxSizing = 'border-box';
+            container.appendChild(pageDiv);
+            return pageDiv;
+        }
+
+        let currentPage = createPage();
+        const safeHeight = 1050;
+
+        // بناء HTML للتقرير بدون العبارات المرفوضة
+        function buildReportHTML() {
+            const data = lastCalcData;
+            const isInstallment = data.installmentsCount > 0;
+            let scheduleRows = '';
+            if (isInstallment && data.schedule.length > 0) {
+                data.schedule.forEach(item => {
+                    scheduleRows += `<tr><td style="padding:8px;border-bottom:1px solid #ddd;">${item.installmentNumber}</td><td style="padding:8px;border-bottom:1px solid #ddd;">${item.dueDate}</td><td style="padding:8px;border-bottom:1px solid #ddd;">${item.amount} د.ك</td></tr>`;
+                });
+            }
+
+            return `
+                <div style="text-align:center; margin-bottom:20px;">
+                    <img src="https://i.postimg.cc/ZK4kBD7D/klynk.jpg" style="height:60px; margin-bottom:8px;" alt="logo">
+                    <h2 style="color:#1e3a5f; margin:5px 0;">كلينك شانزليزيه</h2>
+                    <p style="color:#2c6e2c;">تقرير الأقساط – السنة 2026</p>
+                    <hr style="margin:15px 0;">
+                </div>
+                <div style="margin-bottom:20px;">
+                    <p><strong>📌 اسم العميل:</strong> ${escapeHtml(data.clientName)}</p>
+                    <p><strong>📅 تاريخ التقرير:</strong> ${data.todayDateStr}</p>
+                    <p><strong>💰 إجمالي العملية:</strong> ${formatNumber(data.totalAmount)} دينار كويتي</p>
+                    <p><strong>🔄 طريقة السداد:</strong> ${data.paymentMethod}</p>
+                    ${data.installmentsCount > 0 ? `<p><strong>📆 عدد الدفعات:</strong> ${data.installmentsCount} قسط</p>` : ''}
+                    ${data.installmentsCount > 0 ? `<p><strong>💎 الدفعة المقدمة:</strong> ${data.downPercentageText} (${formatNumber(data.downPaymentAmount)} د.ك)</p>` : ''}
+                    ${data.installmentsCount > 0 ? `<p><strong>📈 القسط الشهري:</strong> ${data.fixedInstallment.toFixed(2)} د.ك</p>` : '<p style="color:#155724;">✅ سيتم سداد المبلغ بالكامل نقداً بدون أقساط.</p>'}
+                    ${data.installmentsCount > 0 ? `<p><strong>🗓 تبدأ الأقساط من:</strong> ${data.startDateStr}</p>` : ''}
+                </div>
+                ${isInstallment && scheduleRows ? `
+                <h3 style="background:#1976d2; color:white; padding:8px; border-radius:12px; text-align:center;">جدول السداد التفصيلي</h3>
+                <table style="width:100%; border-collapse:collapse; margin-top:12px;">
+                    <thead><tr style="background:#0d47a1; color:white;"><th style="padding:10px;">القسط</th><th>تاريخ الاستحقاق</th><th>المبلغ (د.ك)</th></tr></thead>
+                    <tbody>${scheduleRows}</tbody>
+                </table>
+                ` : '<div style="background:#e9ecef; padding:12px; border-radius:16px;">لا يوجد جدول أقساط (عملية نقدية).</div>'}
+                <!-- تم إزالة العبارات: "تم احتساب الأقساط وفق معادلات ROUNDUP..." و "مطور البرنامج" حسب الطلب -->
+                <div style="margin-top:30px; font-size:10px; text-align:center; border-top:1px solid #ccc; padding-top:12px;">
+                    تم إنشاء هذا التقرير بواسطة نظام كلينك شانزليزيه الرقمي.
+                </div>
+            `;
+        }
+
+        function appendHTMLToPages(htmlString) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlString;
+            const children = Array.from(tempDiv.children);
+            for (let el of children) {
+                currentPage.appendChild(el.cloneNode(true));
+                if (currentPage.offsetHeight > safeHeight) {
+                    const lastChild = currentPage.lastElementChild;
+                    if (lastChild) currentPage.removeChild(lastChild);
+                    currentPage = createPage();
+                    if (lastChild) currentPage.appendChild(lastChild.cloneNode(true));
+                }
+            }
+        }
+
+        const fullHtml = buildReportHTML();
+        appendHTMLToPages(fullHtml);
+
+        const pdf = new jsPDF('p', 'pt', 'a4');
+        const imgWidth = pdf.internal.pageSize.getWidth();
+        const pagesDivs = Array.from(container.children);
+
+        try {
+            for (let idx = 0; idx < pagesDivs.length; idx++) {
+                const canvas = await html2canvas(pagesDivs[idx], { scale: 2, useCORS: true });
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                if (idx !== 0) pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+            }
+            pdf.save(`تقرير_قسط_${lastCalcData.clientName}_2026.pdf`);
+        } catch (err) {
+            console.error(err);
+            alert("حدث خطأ أثناء إنشاء PDF، تأكد من اتصال الإنترنت للمكتبات.");
+        } finally {
+            document.body.removeChild(container);
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // ربط الأزرار
+    document.getElementById('calculateBtn').addEventListener('click', updateCalculationAndDisplay);
+    document.getElementById('exportPdfBtn').addEventListener('click', exportFullPDF);
+
+    // تعيين القيمة الافتراضية لحقل "بداية أول قسط" إلى الشهر التالي من اليوم الحالي
+    const todayDefault = new Date();
+    const nextMonth = new Date(todayDefault.getFullYear(), todayDefault.getMonth() + 1, 1);
+    const defaultMonth = `${nextMonth.getFullYear()}-${(nextMonth.getMonth()+1).toString().padStart(2,'0')}`;
+    const monthInput = document.getElementById('firstInstallmentMonth');
+    monthInput.value = defaultMonth;
+
+    // تشغيل الحساب الأولي
+    updateCalculationAndDisplay();
+</script>
+</body>
+</html>
