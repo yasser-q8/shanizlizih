@@ -449,17 +449,10 @@
         if (value === undefined || value === null || isNaN(value)) return "0";
         let number = typeof value === 'number' ? value : parseFloat(value);
         if (isNaN(number)) return "0";
-        // remove fractional part (truncation, as per requirement: 1000.200 -> 1,000)
         let intPart = Math.floor(number);
-        return intPart.toLocaleString('en-US');  // produces comma separated thousands, e.g., 15320 → "15,320"
+        return intPart.toLocaleString('en-US');
     }
 
-    // Override any previous formatting to enforce integer display without decimals
-    function formatNumberForDisplay(num) {
-        return integerWithCommas(num);
-    }
-
-    // Helper for safe HTML
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
@@ -703,7 +696,14 @@
             for (let inst of schedule) {
                 const integerAmount = Math.floor(inst.amount);
                 totalDisplaySum += integerAmount;
-                rowsHtml += `<tr><td>${inst.number}</td><td>${inst.dueDate}</td><td>${integerWithCommas(integerAmount)} ${getCurrencySymbol()}</td></tr>`;
+                // FIXED: correct table cell without any stray characters
+                rowsHtml += `
+                    <tr>
+                        <td>${inst.number}</td>
+                        <td>${inst.dueDate}</td>
+                        <td>${integerWithCommas(integerAmount)} ${getCurrencySymbol()}</td>
+                    </tr>
+                `;
             }
             rowsHtml += `<tr style="border-top: 1px solid #dee2e6;"><td colspan="2" style="text-align:left; font-weight:bold;">${t('totalInstallmentsSum')}</td><td style="font-weight:bold;">${integerWithCommas(totalDisplaySum)} ${getCurrencySymbol()}</td></tr>`;
             scheduleHtml = `<div class="installment-plan"><h4 style="margin-bottom:12px;"><i class="fas fa-calendar-week"></i> ${t('scheduleTitle')} (${t('startsFrom')} ${startDateStr})</h4><table class="installment-table" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}" style="width:100%;"><thead><tr><th>${t('installmentNo')}</th><th>${t('dueDate')}</th><th>${t('amountKWD')}</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
@@ -725,7 +725,7 @@
         `;
     }
     
-    // ========== PDF EXPORT (with integer formatting) ==========
+    // ========== PDF EXPORT with explicit LTR for English summary ==========
     async function exportFullPDF() {
         updateCalculationAndDisplay();
         await new Promise(r => setTimeout(r, 80));
@@ -767,9 +767,18 @@
             }
             const monthFirst = (data.schedule.length > 0) ? integerWithCommas(Math.floor(data.schedule[0].amount)) : "0";
             const signatureBlock = `<div style="margin-top:12px; padding-top:8px; border-top:2px dashed #aaa; display:flex; justify-content:space-between; flex-wrap:wrap;"><span><strong>${t('signatureBlockText')}:</strong> _________________________</span><span><strong>${t('dateSignature')}</strong> ___ / ___ / 2026</span></div>`;
+            
+            const summaryDir = currentLang === 'en' ? 'ltr' : 'rtl';
+            const summaryTextAlign = currentLang === 'en' ? 'left' : 'right';
+            
             return `
-                <div style="text-align:center; margin-bottom:16px;"><img src="https://i.postimg.cc/ZK4kBD7D/klynk.jpg" style="height:55px;"><h2 style="color:#1e3a5f;">${t('clinicName')}</h2><p style="color:#2c6e2c;">${t('clinicSub')} – ${t('fiscalYear')}</p><hr></div>
-                <div style="margin-bottom:16px; font-size:0.85rem;">
+                <div style="text-align:center; margin-bottom:16px;">
+                    <img src="https://i.postimg.cc/ZK4kBD7D/klynk.jpg" style="height:55px;">
+                    <h2 style="color:#1e3a5f;">${t('clinicName')}</h2>
+                    <p style="color:#2c6e2c;">${t('clinicSub')} – ${t('fiscalYear')}</p>
+                    <hr>
+                </div>
+                <div dir="${summaryDir}" style="text-align:${summaryTextAlign}; margin-bottom:16px; font-size:0.85rem;">
                     <p><strong>📌 ${t('clientNameText')}:</strong> ${escapeHtml(data.clientName)}</p>
                     <p><strong>📅 ${t('reportDatePrefix')}:</strong> ${data.todayDateStr}</p>
                     <p><strong>💰 ${t('totalContractLabel')}:</strong> ${integerWithCommas(data.totalAmount)} ${t('currencyLabel')}</p>
@@ -779,8 +788,9 @@
                     ${data.installmentsCount > 0 ? `<p><strong>📈 ${t('monthlyApprox')}:</strong> ${monthFirst} ${getCurrencySymbol()}</p>` : '<p>✅ ' + t('paidFullCash') + '</p>'}
                     ${data.installmentsCount > 0 ? `<p><strong>🗓 ${t('startsFrom')}:</strong> ${data.startDateStr}</p>` : ''}
                 </div>
-                ${isInstallment && scheduleRows ? `<h3 style="background:#1976d2; color:white; padding:6px; border-radius:8px; text-align:center;">${t('scheduleTitle')}</h3><table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#0d47a1; color:white;"><th style="padding:6px;">${t('installmentNo')}</th><th style="padding:6px;">${t('dueDate')}</th><th style="padding:6px;">${t('amountKWD')}</th></tr></thead><tbody>${scheduleRows}</tbody></table>` : `<div style="background:#e9ecef; padding:8px; border-radius:12px;">${t('noScheduleCash')}</div>`}
+                ${isInstallment && scheduleRows ? `<h3 style="background:#1976d2; color:white; padding:6px; border-radius:8px; text-align:center;">${t('scheduleTitle')}</h3><table style="width:100%; border-collapse:collapse;" dir="${summaryDir}"><thead><tr style="background:#0d47a1; color:white;"><th style="padding:6px;">${t('installmentNo')}</th><th style="padding:6px;">${t('dueDate')}</th><th style="padding:6px;">${t('amountKWD')}</th></tr></thead><tbody>${scheduleRows}</tbody></table>` : `<div style="background:#e9ecef; padding:8px; border-radius:12px;">${t('noScheduleCash')}</div>`}
                 ${signatureBlock}
+                <div style="margin-top:12px; font-size:0.7rem; text-align:center; color:#5f7a8c;">${t('paymentTermsApply')}</div>
             `;
         }
         
