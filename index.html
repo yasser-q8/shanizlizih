@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>كلينك شانزليزيه | نظام الأقساط 2026</title>
-    <!-- مكتبات PDF والتصوير -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- أيقونات Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * {
@@ -184,7 +182,6 @@
             transform: translateY(-2px);
         }
 
-        /* تكبير وإبراز البيانات الهامة */
         .highlight-value {
             font-size: 1.8rem;
             font-weight: 800;
@@ -277,6 +274,9 @@
             font-feature-settings: "tnum";
             font-variant-numeric: tabular-nums;
         }
+        .installment-table tr:last-child td {
+            border-bottom: none;
+        }
 
         .installment-table tr:hover {
             background: #f1f9ff;
@@ -309,7 +309,6 @@
             color: #5d7a8c;
         }
 
-        /* ===== توقيع المطور - حجم صغير + خلفية عادية بدون لون ===== */
         .signature-card {
             position: fixed;
             bottom: 20px;
@@ -425,24 +424,21 @@
     </div>
 </div>
 
-<!-- توقيع المطور (مصغر وبدون خلفية زاهية) -->
 <a href="https://yasser-q8.github.io/myprofile/#" class="signature-card" target="_blank" rel="noopener noreferrer">
     <div class="name">Yasser Elkhateeb</div>
     <div class="title">مطور البرنامج 67011143</div>
 </a>
 
 <script>
-    // ------------------- الأرقام الإنجليزية -------------------
     function formatNumber(num, decimals = 3) {
         if (num === undefined || isNaN(num)) num = 0;
         return num.toFixed(decimals).toString();
     }
     
-    // شروط الشرائح
     const PAYMENT_THRESHOLD = 500;
-    const TIER_Q1 = 501;    // 501 - 1500
-    const TIER_R1 = 1501;   // 1501 - 4000
-    const TIER_S1 = 4001;   // 4001+
+    const TIER_Q1 = 501;
+    const TIER_R1 = 1501;
+    const TIER_S1 = 4001;
 
     function getInstallmentsCount(amount) {
         if (amount > PAYMENT_THRESHOLD) {
@@ -460,14 +456,12 @@
         return 0;
     }
     
-    // الدفعة المقدمة: تحويل إلى رقم صحيح (حذف الكسور) بدون أي إشعار
     function getDownPaymentAmountInt(totalAmount, installmentsCount) {
         const percentage = getDownPaymentPercentage(installmentsCount);
         const rawDown = totalAmount * percentage;
         return Math.floor(rawDown);
     }
     
-    // توليد جدول الأقساط: الأقساط الأولى تكون numbers صحيحة (floor) والأخير يأخذ الباقي
     function generateSchedule(totalAmount, downPaymentInt, installmentsCount, startDate) {
         if (installmentsCount === 0) return [];
         let remaining = totalAmount - downPaymentInt;
@@ -516,27 +510,11 @@
             if (!isNaN(parsed.getTime())) baseDate = parsed;
         }
         let nextMonth = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 1);
-        // إذا كان اليوم غير موجود (مثلاً 31 فبراير) يضبط تلقائياً إلى أول يوم من الشهر التالي
-        if (nextMonth.getMonth() !== (baseDate.getMonth() + 1) % 12) {
-            nextMonth = new Date(baseDate.getFullYear(), baseDate.getMonth() + 2, 0);
-        }
         return nextMonth;
     }
     
-    let lastCalcData = {
-        clientName: '',
-        totalAmount: 0,
-        paymentMethod: '',
-        installmentsCount: 0,
-        downPaymentAmount: 0,
-        downPercentageText: '',
-        schedule: [],
-        todayDateStr: '',
-        startDateStr: '',
-        currency: 'د.ك'
-    };
-    
-    // تحديث البيانات وعرضها بشكل تلقائي
+    let lastCalcData = {};
+
     function updateCalculationAndDisplay() {
         const amountInput = document.getElementById('totalAmount');
         const clientNameInput = document.getElementById('clientName');
@@ -601,7 +579,6 @@
         const resultsDiv = document.getElementById('resultsArea');
         if (!resultsDiv) return;
         
-        // توقيع العميل
         const clientSignatureHtml = `
             <div class="client-signature">
                 <span><i class="fas fa-pen-alt"></i> توقيع العميل:</span>
@@ -635,7 +612,10 @@
         let scheduleHtml = '';
         if (schedule.length > 0) {
             let rowsHtml = '';
+            let totalInstallmentsSum = 0;
             for (let inst of schedule) {
+                const amountVal = parseFloat(inst.amount);
+                totalInstallmentsSum += amountVal;
                 rowsHtml += `
                     <tr>
                         <td>${inst.number}</td>
@@ -644,12 +624,18 @@
                     </tr>
                 `;
             }
+            rowsHtml += `
+                <tr style="border-top: 1px solid #dee2e6;">
+                    <td colspan="2" style="text-align:left; font-weight:bold;">إجمالي قيمة الأقساط (المبلغ بعد الدفعة الأولى)</td>
+                    <td style="font-weight:bold;">${totalInstallmentsSum.toFixed(3)} د.ك</td>
+                </tr>
+            `;
             scheduleHtml = `
                 <div class="installment-plan">
                     <h4 style="margin-bottom:12px;"><i class="fas fa-calendar-week"></i> خطة الأقساط الشهرية (تبدأ من ${startDateStr})</h4>
                     <table class="installment-table" dir="rtl" style="width:100%;">
                         <thead>
-                            <tr><th># رقم القسط</th><th>تاريخ الاستحقاق</th><th>قيمة القسط (د.ك)</th></tr>
+                            <tr><th># رقم القسط</th><th>تاريخ الاستحقاق (يوم/شهر/سنة)</th><th>قيمة القسط (د.ك)</th></tr>
                         </thead>
                         <tbody>${rowsHtml}</tbody>
                     </table>
@@ -657,7 +643,6 @@
             `;
         }
         
-        // عرض البيانات مع تكبير الأرقام وإبرازها (إجمالي التعاقد، دفعة أولى، قسط شهري، اسم العميل)
         const monthlyAmount = schedule.length > 0 ? schedule[0].amount : '0';
         resultsDiv.innerHTML = `
             <div class="result-summary">
@@ -696,7 +681,6 @@
         `;
     }
     
-    // ------------------- تصدير PDF -------------------
     async function exportFullPDF() {
         updateCalculationAndDisplay();
         await new Promise(r => setTimeout(r, 80));
@@ -729,47 +713,58 @@
             const data = lastCalcData;
             const isInstallment = data.installmentsCount > 0;
             let scheduleRows = '';
+            let totalInstallmentsSum = 0;
             if (isInstallment && data.schedule.length > 0) {
                 for (let inst of data.schedule) {
+                    const amt = parseFloat(inst.amount);
+                    totalInstallmentsSum += amt;
                     scheduleRows += `
-                        <tr><td style="padding:8px;border-bottom:1px solid #ddd;">${inst.number}</td>
-                        <td style="padding:8px;border-bottom:1px solid #ddd;">${inst.dueDate}</td>
-                        <td style="padding:8px;border-bottom:1px solid #ddd;">${inst.amount} د.ك</td></tr>
+                        <tr>
+                            <td style="padding:6px; border-bottom:1px solid #ddd; font-size:0.9rem;">${inst.number}</td>
+                            <td style="padding:6px; border-bottom:1px solid #ddd; font-size:0.9rem;">${inst.dueDate}</td>
+                            <td style="padding:6px; border-bottom:1px solid #ddd; font-size:0.9rem;">${inst.amount} د.ك</td>
+                        </tr>
                     `;
                 }
+                scheduleRows += `
+                    <tr style="border-top:1px solid #aaa;">
+                        <td colspan="2" style="padding:6px; text-align:left; font-weight:bold; font-size:0.9rem;">إجمالي قيمة الأقساط</td>
+                        <td style="padding:6px; font-weight:bold; font-size:0.9rem;">${totalInstallmentsSum.toFixed(3)} د.ك</td>
+                    </tr>
+                `;
             }
             
             const signatureBlock = `
-                <div style="margin-top: 30px; padding-top: 15px; border-top: 2px dashed #aaa; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <div style="margin-top: 12px; padding-top: 8px; border-top: 2px dashed #aaa; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; font-size:0.85rem;">
                     <span><strong>توقيع العميل:</strong> _________________________</span>
                     <span><strong>التاريخ:</strong> ___ / ___ / 2026</span>
                 </div>
             `;
             
             return `
-                <div style="text-align:center; margin-bottom:20px;">
-                    <img src="https://i.postimg.cc/ZK4kBD7D/klynk.jpg" style="height:60px; margin-bottom:8px;" alt="logo">
-                    <h2 style="color:#1e3a5f; margin:5px 0;">كلينك شانزليزيه</h2>
-                    <p style="color:#2c6e2c;">تقرير الأقساط – السنة 2026</p>
-                    <hr style="margin:15px 0;">
+                <div style="text-align:center; margin-bottom:16px;">
+                    <img src="https://i.postimg.cc/ZK4kBD7D/klynk.jpg" style="height:55px; margin-bottom:6px;" alt="logo">
+                    <h2 style="color:#1e3a5f; margin:4px 0; font-size:1.4rem;">كلينك شانزليزيه</h2>
+                    <p style="color:#2c6e2c; font-size:0.8rem;">تقرير الأقساط – السنة 2026</p>
+                    <hr style="margin:10px 0;">
                 </div>
-                <div style="margin-bottom:20px;">
+                <div style="margin-bottom:16px; font-size:0.85rem;">
                     <p><strong>📌 اسم العميل:</strong> ${escapeHtml(data.clientName)}</p>
                     <p><strong>📅 تاريخ التقرير:</strong> ${data.todayDateStr}</p>
                     <p><strong>💰 إجمالي التعاقد:</strong> ${formatNumber(data.totalAmount)} دينار كويتي</p>
                     <p><strong>🔄 طريقة السداد:</strong> ${data.paymentMethod}</p>
                     ${data.installmentsCount > 0 ? `<p><strong>📆 عدد الأقساط (بعد الدفعة الأولى):</strong> ${data.installmentsCount} قسط</p>` : ''}
                     ${data.installmentsCount > 0 ? `<p><strong>💎 الدفعة المقدمة:</strong> ${data.downPercentageText} (${formatNumber(data.downPaymentAmount)} د.ك)</p>` : ''}
-                    ${data.installmentsCount > 0 ? `<p><strong>📈 القسط الشهري الثابت:</strong> ${data.schedule.length > 0 ? data.schedule[0].amount : '0'} د.ك</p>` : '<p style="color:#155724;">✅ سيتم سداد المبلغ بالكامل نقداً بدون أقساط.</p>'}
+                    ${data.installmentsCount > 0 ? `<p><strong>📈 القسط الشهري التقريبي:</strong> ${data.schedule.length > 0 ? data.schedule[0].amount : '0'} د.ك</p>` : '<p style="color:#155724;">✅ سيتم سداد المبلغ بالكامل نقداً بدون أقساط.</p>'}
                     ${data.installmentsCount > 0 ? `<p><strong>🗓 تبدأ الأقساط من:</strong> ${data.startDateStr}</p>` : ''}
                 </div>
                 ${isInstallment && scheduleRows ? `
-                <h3 style="background:#1976d2; color:white; padding:8px; border-radius:12px; text-align:center;">جدول السداد التفصيلي</h3>
-                <table style="width:100%; border-collapse:collapse; margin-top:12px;">
-                    <thead><tr style="background:#0d47a1; color:white;"><th style="padding:10px;"># القسط</th><th>تاريخ الاستحقاق</th><th>المبلغ (د.ك)</th></tr></thead>
+                <h3 style="background:#1976d2; color:white; padding:6px; border-radius:8px; text-align:center; font-size:1rem; margin:8px 0;">جدول السداد التفصيلي</h3>
+                <table style="width:100%; border-collapse:collapse; margin-top:8px;">
+                    <thead><tr style="background:#0d47a1; color:white;"><th style="padding:6px; font-size:0.85rem;"># القسط</th><th style="padding:6px; font-size:0.85rem;">تاريخ الاستحقاق (يوم/شهر/سنة)</th><th style="padding:6px; font-size:0.85rem;">المبلغ (د.ك)</th></tr></thead>
                     <tbody>${scheduleRows}</tbody>
-                  </table>
-                ` : '<div style="background:#e9ecef; padding:12px; border-radius:16px;">لا يوجد جدول أقساط (عملية نقدية).</div>'}
+                </table>
+                ` : '<div style="background:#e9ecef; padding:8px; border-radius:12px; font-size:0.85rem;">لا يوجد جدول أقساط (عملية نقدية).</div>'}
                 ${signatureBlock}
             `;
         }
@@ -798,7 +793,8 @@
         
         try {
             for (let idx = 0; idx < pagesDivs.length; idx++) {
-                const canvas = await html2canvas(pagesDivs[idx], { scale: 2, useCORS: true });
+                // تم تقليل scale من 2 إلى 1.9 لتقليل حجم التقرير الكلي بنسبة 5%
+                const canvas = await html2canvas(pagesDivs[idx], { scale: 1.9, useCORS: true });
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
                 if (idx !== 0) pdf.addPage();
@@ -823,7 +819,6 @@
         });
     }
     
-    // --- إعداد التواريخ الافتراضية: تاريخ اليوم و بداية الأقساط = 1 من الشهر التالي ---
     function setDefaultDates() {
         const today = new Date();
         const yyyy = today.getFullYear();
@@ -835,7 +830,6 @@
             processDateInput.value = todayStr;
         }
         
-        // أول يوم من الشهر التالي
         const nextMonthFirst = new Date(today.getFullYear(), today.getMonth() + 1, 1);
         const nextYear = nextMonthFirst.getFullYear();
         const nextMonth = String(nextMonthFirst.getMonth() + 1).padStart(2, '0');
@@ -847,7 +841,6 @@
         }
     }
     
-    // ربط الأحداث للتحديث التلقائي
     function bindAutoUpdate() {
         const inputs = ['clientName', 'totalAmount', 'processStartDate', 'firstInstallmentDate'];
         inputs.forEach(id => {
@@ -857,14 +850,12 @@
                 el.addEventListener('change', updateCalculationAndDisplay);
             }
         });
-        // زر الحساب اليدوي أيضاً يؤدي نفس الوظيفة (احتياطي)
         const calcBtn = document.getElementById('calculateBtn');
         if (calcBtn) calcBtn.addEventListener('click', updateCalculationAndDisplay);
         const pdfBtn = document.getElementById('exportPdfBtn');
         if (pdfBtn) pdfBtn.addEventListener('click', exportFullPDF);
     }
     
-    // تهيئة الصفحة
     setDefaultDates();
     bindAutoUpdate();
     updateCalculationAndDisplay();
