@@ -385,7 +385,7 @@
 <body class="ar-mode">
 <div class="clinic-wrapper">
     <div class="lang-switch-container">
-        <button class="lang-btn" id="langToggleBtn"><i class="fas fa-language"></i> <span id="langBtnText">English</span></button>
+        <button class="lang-btn" id="langToggleBtn"><i class="fas fa-language"></i> <span id="langBtnText">English/عربي</span></button>
     </div>
     <div class="calculator-card">
         <div class="clinic-header">
@@ -432,7 +432,7 @@
                 </div>
             </div>
             <div class="footer-note" id="footerConditions">
-                <i class="fas fa-info-circle"></i> شروط التقسيط: 501-1500 د.ك → دفعة أولى 25% + 4 أقساط شهرية. 1501-4000 → دفعة أولى 50% + 5 أقساط. 4001 فأكثر → دفعة أولى 30% + 12 قسطاً.
+                <i class="fas fa-info-circle"></i> <!-- سيتم تعبئة النص ديناميكياً -->
             </div>
         </div>
     </div>
@@ -444,7 +444,7 @@
 </a>
 
 <script>
-    // Translation dictionary with currency support
+    // Translation dictionary with full text support
     const translations = {
         ar: {
             pageTitle: "كلينك شانزليزيه | نظام الأقساط 2026",
@@ -487,7 +487,9 @@
             pleaseEnterAmount: "الرجاء إدخال مبلغ صحيح.",
             paidFullCash: "يتم دفع المبلغ بالكامل نقداً. لا توجد أقساط شهرية.",
             currencySymbol: "د.ك",
-            currencyLabel: "دينار كويتي"
+            currencyLabel: "دينار كويتي",
+            langButtonArabic: "English/عربي",    // when in arabic mode, button shows English
+            langButtonEnglish: "عربي"       // when in english mode, button shows Arabic
         },
         en: {
             pageTitle: "Champs-Élysées Clinic | Installment System 2026",
@@ -530,11 +532,13 @@
             pleaseEnterAmount: "Please enter a valid amount.",
             paidFullCash: "Full amount will be paid in cash. No monthly installments.",
             currencySymbol: "K.D",
-            currencyLabel: "Kuwaiti Dinar"
+            currencyLabel: "Kuwaiti Dinar",
+            langButtonArabic: "English",
+            langButtonEnglish: "عربي"
         }
     };
 
-    let currentLang = 'ar'; // 'ar' or 'en'
+    let currentLang = 'ar';
     
     function getCurrencySymbol() {
         return translations[currentLang].currencySymbol;
@@ -555,10 +559,12 @@
         }
     }
     
+    // Translate all static UI elements (including footer conditions)
     function translateStaticElements() {
         const t = translations[currentLang];
         document.title = t.pageTitle;
-        document.getElementById('pageTitle').innerText = t.pageTitle;
+        const pageTitleElem = document.getElementById('pageTitle');
+        if (pageTitleElem) pageTitleElem.innerText = t.pageTitle;
         document.getElementById('clinicName').innerText = t.clinicName;
         document.getElementById('clinicSub').innerText = t.clinicSub;
         document.getElementById('fiscalYearText').innerText = t.fiscalYear;
@@ -571,21 +577,22 @@
         document.getElementById('initialPlaceholder').innerHTML = `<i class="fas fa-hand-holding-usd fa-3x"></i><p>${t.initialMsg}</p>`;
         document.getElementById('footerConditions').innerHTML = `<i class="fas fa-info-circle"></i> ${t.footerConditions}`;
         document.getElementById('devTitle').innerText = t.devTitle;
-        // Update language button text: when currentLang is 'ar', show 'English' as the button text; when 'en', show 'عربي'
+        
+        // Update language button text: when currentLang = 'ar', button shows t.langButtonArabic ("English")
+        // when currentLang = 'en', button shows t.langButtonEnglish ("عربي")
         const langBtnSpan = document.getElementById('langBtnText');
         if (currentLang === 'ar') {
-            langBtnSpan.innerText = 'English';
+            langBtnSpan.innerText = t.langButtonArabic;  // "English"
         } else {
-            langBtnSpan.innerText = 'عربي';
+            langBtnSpan.innerText = t.langButtonEnglish;  // "عربي"
         }
-        // update placeholder for inputs
+        
         const clientNameInput = document.getElementById('clientName');
         if (clientNameInput) clientNameInput.placeholder = currentLang === 'ar' ? 'أدخل الاسم الكامل' : 'Enter full name';
         const totalInput = document.getElementById('totalAmount');
         if (totalInput) totalInput.placeholder = currentLang === 'ar' ? '0.000' : '0.000';
     }
     
-    // Helper function to get translated text for dynamic outputs
     function t(key, params = {}) {
         let text = translations[currentLang][key] || translations['ar'][key] || key;
         for (let [k, v] of Object.entries(params)) {
@@ -594,7 +601,7 @@
         return text;
     }
     
-    // Core logic (unchanged)
+    // --- Core logic ---
     const PAYMENT_THRESHOLD = 500;
     const TIER_Q1 = 501;
     const TIER_R1 = 1501;
@@ -751,6 +758,7 @@
             </div>
         `;
         
+        // Display for non-installment case (including the paidFullCash message)
         if (!isInstallmentEligible || installmentsCount === 0 || totalAmount === 0) {
             resultsDiv.innerHTML = `
                 <div class="result-summary">
@@ -773,6 +781,7 @@
             return;
         }
         
+        // Installment case
         let scheduleHtml = '';
         if (schedule.length > 0) {
             let rowsHtml = '';
@@ -785,7 +794,7 @@
                         <td>${inst.number}</td>
                         <td>${inst.dueDate}</td>
                         <td>${inst.amount} ${getCurrencySymbol()}</td>
-                    </tr>
+                    </table>
                 `;
             }
             rowsHtml += `
@@ -848,7 +857,6 @@
     async function exportFullPDF() {
         updateCalculationAndDisplay();
         await new Promise(r => setTimeout(r, 80));
-        
         const { jsPDF } = window.jspdf;
         const container = document.createElement('div');
         container.style.position = 'fixed';
@@ -995,7 +1003,6 @@
         const todayStr = `${yyyy}-${mm}-${dd}`;
         const processDateInput = document.getElementById('processStartDate');
         if (processDateInput && !processDateInput.value) processDateInput.value = todayStr;
-        
         const nextMonthFirst = new Date(today.getFullYear(), today.getMonth() + 1, 1);
         const nextYear = nextMonthFirst.getFullYear();
         const nextMonth = String(nextMonthFirst.getMonth() + 1).padStart(2, '0');
@@ -1020,17 +1027,17 @@
     
     function switchLanguage() {
         currentLang = currentLang === 'ar' ? 'en' : 'ar';
-        translateStaticElements();
-        updatePageDirection();
-        updateCalculationAndDisplay(); // full refresh with new currency and texts
+        translateStaticElements();      // update all static texts including footer and button label
+        updatePageDirection();          // change layout direction
+        updateCalculationAndDisplay();  // refresh all dynamic content with new language and currency
     }
     
-    document.getElementById('langToggleBtn').addEventListener('click', switchLanguage);
     setDefaultDates();
     bindAutoUpdate();
     translateStaticElements();
     updatePageDirection();
     updateCalculationAndDisplay();
+    document.getElementById('langToggleBtn').addEventListener('click', switchLanguage);
 </script>
 </body>
 </html>
