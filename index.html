@@ -444,7 +444,33 @@
 </a>
 
 <script>
-    // Translation dictionary with currency support
+    // ======================== INTEGER FORMATTING (NO FRACTIONS, THOUSANDS SEPARATOR) ========================
+    function integerWithCommas(value) {
+        if (value === undefined || value === null || isNaN(value)) return "0";
+        let number = typeof value === 'number' ? value : parseFloat(value);
+        if (isNaN(number)) return "0";
+        // remove fractional part (truncation, as per requirement: 1000.200 -> 1,000)
+        let intPart = Math.floor(number);
+        return intPart.toLocaleString('en-US');  // produces comma separated thousands, e.g., 15320 → "15,320"
+    }
+
+    // Override any previous formatting to enforce integer display without decimals
+    function formatNumberForDisplay(num) {
+        return integerWithCommas(num);
+    }
+
+    // Helper for safe HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Translation dictionary
     const translations = {
         ar: {
             pageTitle: "كلينك شانزليزيه | نظام الأقساط 2026",
@@ -534,72 +560,17 @@
         }
     };
 
-    let currentLang = 'ar'; // 'ar' or 'en'
-    
-    function getCurrencySymbol() {
-        return translations[currentLang].currencySymbol;
-    }
-    
-    function updatePageDirection() {
-        const body = document.body;
-        if (currentLang === 'en') {
-            body.classList.remove('ar-mode');
-            body.classList.add('en-mode');
-            body.setAttribute('dir', 'ltr');
-            document.documentElement.setAttribute('lang', 'en');
-        } else {
-            body.classList.remove('en-mode');
-            body.classList.add('ar-mode');
-            body.setAttribute('dir', 'rtl');
-            document.documentElement.setAttribute('lang', 'ar');
-        }
-    }
-    
-    function translateStaticElements() {
-        const t = translations[currentLang];
-        document.title = t.pageTitle;
-        document.getElementById('pageTitle').innerText = t.pageTitle;
-        document.getElementById('clinicName').innerText = t.clinicName;
-        document.getElementById('clinicSub').innerText = t.clinicSub;
-        document.getElementById('fiscalYearText').innerText = t.fiscalYear;
-        document.getElementById('clientNameLabel').innerHTML = `<i class="fas fa-user"></i> ${t.clientNameLabel}`;
-        document.getElementById('totalAmountLabel').innerHTML = `<i class="fas fa-coins"></i> ${t.totalAmountLabel}`;
-        document.getElementById('processStartLabel').innerHTML = `<i class="fas fa-calendar-plus"></i> ${t.processStartLabel}`;
-        document.getElementById('firstInstallLabel').innerHTML = `<i class="fas fa-calendar-alt"></i> ${t.firstInstallLabel}`;
-        document.getElementById('calcBtnText').innerText = t.calcBtn;
-        document.getElementById('pdfBtnText').innerText = t.pdfBtn;
-        document.getElementById('initialPlaceholder').innerHTML = `<i class="fas fa-hand-holding-usd fa-3x"></i><p>${t.initialMsg}</p>`;
-        document.getElementById('footerConditions').innerHTML = `<i class="fas fa-info-circle"></i> ${t.footerConditions}`;
-        document.getElementById('devTitle').innerText = t.devTitle;
-        // Update language button text: when currentLang is 'ar', show 'English' as the button text; when 'en', show 'عربي'
-        const langBtnSpan = document.getElementById('langBtnText');
-        if (currentLang === 'ar') {
-            langBtnSpan.innerText = 'English/عربـــي';
-        } else {
-            langBtnSpan.innerText = 'عربي';
-        }
-        // update placeholder for inputs
-        const clientNameInput = document.getElementById('clientName');
-        if (clientNameInput) clientNameInput.placeholder = currentLang === 'ar' ? 'أدخل الاسم الكامل' : 'Enter full name';
-        const totalInput = document.getElementById('totalAmount');
-        if (totalInput) totalInput.placeholder = currentLang === 'ar' ? '0.000' : '0.000';
-    }
-    
-    // Helper function to get translated text for dynamic outputs
+    let currentLang = 'ar';
+    function getCurrencySymbol() { return translations[currentLang].currencySymbol; }
     function t(key, params = {}) {
         let text = translations[currentLang][key] || translations['ar'][key] || key;
-        for (let [k, v] of Object.entries(params)) {
-            text = text.replace(`{${k}}`, v);
-        }
+        for (let [k, v] of Object.entries(params)) text = text.replace(`{${k}}`, v);
         return text;
     }
-    
-    // Core logic (unchanged)
-    const PAYMENT_THRESHOLD = 500;
-    const TIER_Q1 = 501;
-    const TIER_R1 = 1501;
-    const TIER_S1 = 4001;
 
+    // ==== Core logic (unchanged calculations, rounding down for installments) ====
+    const PAYMENT_THRESHOLD = 500;
+    const TIER_Q1 = 501, TIER_R1 = 1501, TIER_S1 = 4001;
     function getInstallmentsCount(amount) {
         if (amount > PAYMENT_THRESHOLD) {
             if (amount >= TIER_S1) return 12;
@@ -608,20 +579,16 @@
         }
         return 0;
     }
-    
     function getDownPaymentPercentage(installmentsCount) {
         if (installmentsCount === 12) return 0.30;
         if (installmentsCount === 5) return 0.50;
         if (installmentsCount === 4) return 0.25;
         return 0;
     }
-    
     function getDownPaymentAmountInt(totalAmount, installmentsCount) {
         const percentage = getDownPaymentPercentage(installmentsCount);
-        const rawDown = totalAmount * percentage;
-        return Math.floor(rawDown);
+        return Math.floor(totalAmount * percentage);
     }
-    
     function generateSchedule(totalAmount, downPaymentInt, installmentsCount, startDate) {
         if (installmentsCount === 0) return [];
         let remaining = totalAmount - downPaymentInt;
@@ -638,11 +605,7 @@
             const day = dueDate.getDate().toString().padStart(2, '0');
             const month = (dueDate.getMonth() + 1).toString().padStart(2, '0');
             const year = dueDate.getFullYear();
-            schedule.push({
-                number: i,
-                dueDate: `${day}/${month}/${year}`,
-                amount: installmentValue.toFixed(3)
-            });
+            schedule.push({ number: i, dueDate: `${day}/${month}/${year}`, amount: installmentValue });
         }
         let lastInstallment = remaining - sumOfInstallments;
         if (lastInstallment < 0) lastInstallment = 0;
@@ -651,66 +614,42 @@
         const lastDay = lastDate.getDate().toString().padStart(2, '0');
         const lastMonth = (lastDate.getMonth() + 1).toString().padStart(2, '0');
         const lastYear = lastDate.getFullYear();
-        schedule.push({
-            number: installmentsCount,
-            dueDate: `${lastDay}/${lastMonth}/${lastYear}`,
-            amount: lastInstallment.toFixed(3)
-        });
+        schedule.push({ number: installmentsCount, dueDate: `${lastDay}/${lastMonth}/${lastYear}`, amount: lastInstallment });
         return schedule;
     }
-    
     function getEffectiveStartDate(processDateValue, manualDateValue) {
-        if (manualDateValue) {
-            const parsed = new Date(manualDateValue);
-            if (!isNaN(parsed.getTime())) return parsed;
-        }
+        if (manualDateValue) { const parsed = new Date(manualDateValue); if (!isNaN(parsed.getTime())) return parsed; }
         let baseDate = new Date();
-        if (processDateValue) {
-            const parsed = new Date(processDateValue);
-            if (!isNaN(parsed.getTime())) baseDate = parsed;
-        }
-        let nextMonth = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 1);
-        return nextMonth;
+        if (processDateValue) { const parsed = new Date(processDateValue); if (!isNaN(parsed.getTime())) baseDate = parsed; }
+        return new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 1);
     }
-    
+
     let lastCalcData = {};
 
     function updateCalculationAndDisplay() {
-        const amountInput = document.getElementById('totalAmount');
-        const clientNameInput = document.getElementById('clientName');
-        const processDateInput = document.getElementById('processStartDate');
-        const firstInstallmentDateInput = document.getElementById('firstInstallmentDate');
-        
-        let totalAmount = parseFloat(amountInput.value);
+        const totalInput = document.getElementById('totalAmount');
+        let totalAmount = parseFloat(totalInput.value);
         if (isNaN(totalAmount) || totalAmount < 0) totalAmount = 0;
         totalAmount = parseFloat(totalAmount.toFixed(3));
-        const clientName = clientNameInput.value.trim() || "";
-        
+        const clientName = document.getElementById('clientName').value.trim();
+        const processDate = document.getElementById('processStartDate').value;
+        const manualDate = document.getElementById('firstInstallmentDate').value;
+        const effectiveStart = getEffectiveStartDate(processDate, manualDate);
+        const startDateStr = `${effectiveStart.getDate().toString().padStart(2,'0')}/${(effectiveStart.getMonth()+1).toString().padStart(2,'0')}/${effectiveStart.getFullYear()}`;
         const today = new Date();
         const todayFormatted = `${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}`;
         
-        const processDate = processDateInput.value;
-        const manualDate = firstInstallmentDateInput.value;
-        const effectiveStart = getEffectiveStartDate(processDate, manualDate);
-        const startDateStr = `${effectiveStart.getDate().toString().padStart(2,'0')}/${(effectiveStart.getMonth()+1).toString().padStart(2,'0')}/${effectiveStart.getFullYear()}`;
+        let paymentMethod = '', installmentsCount = 0, downPaymentAmount = 0, downPercentageText = '', schedule = [];
+        const isEligible = totalAmount > PAYMENT_THRESHOLD;
         
-        let paymentMethod = '';
-        let installmentsCount = 0;
-        let downPaymentAmount = 0;
-        let downPercentageText = '';
-        let schedule = [];
-        
-        const isInstallmentEligible = totalAmount > PAYMENT_THRESHOLD;
-        
-        if (!isInstallmentEligible || totalAmount === 0) {
+        if (!isEligible || totalAmount === 0) {
             paymentMethod = t('fullCashPayment');
             installmentsCount = 0;
         } else {
             installmentsCount = getInstallmentsCount(totalAmount);
             if (installmentsCount > 0) {
                 downPaymentAmount = getDownPaymentAmountInt(totalAmount, installmentsCount);
-                const percentage = getDownPaymentPercentage(installmentsCount);
-                const percentVal = percentage * 100;
+                const percent = getDownPaymentPercentage(installmentsCount) * 100;
                 if (currentLang === 'ar') {
                     if (installmentsCount === 4) downPercentageText = "25% من المبلغ";
                     else if (installmentsCount === 5) downPercentageText = "50% من المبلغ";
@@ -743,30 +682,14 @@
         const resultsDiv = document.getElementById('resultsArea');
         if (!resultsDiv) return;
         
-        const clientSignatureHtml = `
-            <div class="client-signature">
-                <span><i class="fas fa-pen-alt"></i> ${t('clientSignature')}</span>
-                <span class="signature-line">_________________________</span>
-                <span>${t('dateSignature')} ___ / ___ / 2026</span>
-            </div>
-        `;
+        const clientSignatureHtml = `<div class="client-signature"><span><i class="fas fa-pen-alt"></i> ${t('clientSignature')}</span><span class="signature-line">_________________________</span><span>${t('dateSignature')} ___ / ___ / 2026</span></div>`;
         
-        if (!isInstallmentEligible || installmentsCount === 0 || totalAmount === 0) {
+        if (!isEligible || installmentsCount === 0 || totalAmount === 0) {
             resultsDiv.innerHTML = `
                 <div class="result-summary">
-                    <div class="info-card red-edge">
-                        <i class="fas fa-user-circle"></i> <strong>${t('clientNameText')}</strong><br>
-                        <span class="highlight-name">${escapeHtml(clientName) || t('emptyNameFallback')}</span><br>
-                        <i class="fas fa-calendar-day"></i> <strong>${t('reportDatePrefix')}</strong> ${todayFormatted}
-                    </div>
-                    <div class="info-card red-edge">
-                        <i class="fas fa-money-bill-wave"></i> <strong>${t('totalContractLabel')}</strong><br>
-                        <div class="data-big">${formatNumber(totalAmount)} <span style="font-size:1rem;">${getCurrencySymbol()}</span></div>
-                        <strong>${t('paymentMethodLabel')}</strong> ${paymentMethod}
-                    </div>
-                    <div class="info-card blue-edge">
-                        <i class="fas fa-check-circle" style="color:#2e7d32;"></i> ${totalAmount === 0 ? t('pleaseEnterAmount') : t('paidFullCash')}
-                    </div>
+                    <div class="info-card red-edge"><i class="fas fa-user-circle"></i> <strong>${t('clientNameText')}</strong><br><span class="highlight-name">${escapeHtml(clientName) || t('emptyNameFallback')}</span><br><i class="fas fa-calendar-day"></i> <strong>${t('reportDatePrefix')}</strong> ${todayFormatted}</div>
+                    <div class="info-card red-edge"><i class="fas fa-money-bill-wave"></i> <strong>${t('totalContractLabel')}</strong><br><div class="data-big">${integerWithCommas(totalAmount)} <span style="font-size:1rem;">${getCurrencySymbol()}</span></div><strong>${t('paymentMethodLabel')}</strong> ${paymentMethod}</div>
+                    <div class="info-card blue-edge"><i class="fas fa-check-circle" style="color:#2e7d32;"></i> ${totalAmount === 0 ? t('pleaseEnterAmount') : t('paidFullCash')}</div>
                 </div>
                 ${totalAmount !== 0 ? clientSignatureHtml : ''}
             `;
@@ -774,81 +697,38 @@
         }
         
         let scheduleHtml = '';
+        let totalDisplaySum = 0;
         if (schedule.length > 0) {
             let rowsHtml = '';
-            let totalInstallmentsSum = 0;
             for (let inst of schedule) {
-                const amountVal = parseFloat(inst.amount);
-                totalInstallmentsSum += amountVal;
-                rowsHtml += `
-                    <tr>
-                        <td>${inst.number}</td>
-                        <td>${inst.dueDate}</td>
-                        <td>${inst.amount} ${getCurrencySymbol()}</td>
-                    </tr>
-                `;
+                const integerAmount = Math.floor(inst.amount);
+                totalDisplaySum += integerAmount;
+                rowsHtml += `<tr><td>${inst.number}</td><td>${inst.dueDate}</td><td>${integerWithCommas(integerAmount)} ${getCurrencySymbol()}</td></tr>`;
             }
-            rowsHtml += `
-                <tr style="border-top: 1px solid #dee2e6;">
-                    <td colspan="2" style="text-align:left; font-weight:bold;">${t('totalInstallmentsSum')}</td>
-                    <td style="font-weight:bold;">${totalInstallmentsSum.toFixed(3)} ${getCurrencySymbol()}</td>
-                </tr>
-            `;
-            scheduleHtml = `
-                <div class="installment-plan">
-                    <h4 style="margin-bottom:12px;"><i class="fas fa-calendar-week"></i> ${t('scheduleTitle')} (${t('startsFrom')} ${startDateStr})</h4>
-                    <table class="installment-table" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}" style="width:100%;">
-                        <thead>
-                            <tr><th>${t('installmentNo')}</th><th>${t('dueDate')}</th><th>${t('amountKWD')}</th></tr>
-                        </thead>
-                        <tbody>${rowsHtml}</tbody>
-                    </table>
-                </div>
-            `;
+            rowsHtml += `<tr style="border-top: 1px solid #dee2e6;"><td colspan="2" style="text-align:left; font-weight:bold;">${t('totalInstallmentsSum')}</td><td style="font-weight:bold;">${integerWithCommas(totalDisplaySum)} ${getCurrencySymbol()}</td></tr>`;
+            scheduleHtml = `<div class="installment-plan"><h4 style="margin-bottom:12px;"><i class="fas fa-calendar-week"></i> ${t('scheduleTitle')} (${t('startsFrom')} ${startDateStr})</h4><table class="installment-table" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}" style="width:100%;"><thead><tr><th>${t('installmentNo')}</th><th>${t('dueDate')}</th><th>${t('amountKWD')}</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
         }
         
-        const monthlyAmount = schedule.length > 0 ? schedule[0].amount : '0';
+        const monthlyInteger = schedule.length > 0 ? Math.floor(schedule[0].amount) : 0;
         resultsDiv.innerHTML = `
             <div class="result-summary">
-                <div class="info-card" style="border-right-color:#2c7da0;">
-                    <i class="fas fa-id-card"></i> <strong>${t('clientNameText')}</strong><br>
-                    <span class="highlight-name">${escapeHtml(clientName) || t('emptyNameFallback')}</span>
-                </div>
-                <div class="info-card red-edge">
-                    <i class="fas fa-chart-line"></i> <strong>${t('totalContractLabel')}</strong><br>
-                    <div class="data-big">${formatNumber(totalAmount)} <span style="font-size:1rem;">${getCurrencySymbol()}</span></div>
-                </div>
-                <div class="info-card blue-edge">
-                    <i class="fas fa-gem"></i> <strong>${t('downPaymentLabel')}</strong><br>
-                    <div class="data-big">${formatNumber(downPaymentAmount)} <span style="font-size:1rem;">${getCurrencySymbol()}</span></div>
-                    <span class="metric-large">(${downPercentageText})</span>
-                </div>
-                <div class="info-card" style="background:#eef5ff;">
-                    <i class="fas fa-equals"></i> <strong>${t('monthlyInstallLabel')}</strong><br>
-                    <div class="data-big">${monthlyAmount} <span style="font-size:1rem;">${getCurrencySymbol()}</span></div>
-                    <span class="metric-large">${t('lastMayVary')}</span>
-                </div>
-                <div class="info-card">
-                    <i class="fas fa-layer-group"></i> <strong>${t('installmentsCountLabel')}</strong><br>
-                    <span class="highlight-value" style="font-size:1.6rem;">${installmentsCount} ${currentLang === 'ar' ? 'قسط' : 'installments'}</span>
-                </div>
-                <div class="info-card">
-                    <i class="fas fa-credit-card"></i> <strong>${t('paymentMethodLabel')}</strong><br>
-                    <span class="metric-large">${paymentMethod}</span>
-                </div>
+                <div class="info-card" style="border-right-color:#2c7da0;"><i class="fas fa-id-card"></i> <strong>${t('clientNameText')}</strong><br><span class="highlight-name">${escapeHtml(clientName) || t('emptyNameFallback')}</span></div>
+                <div class="info-card red-edge"><i class="fas fa-chart-line"></i> <strong>${t('totalContractLabel')}</strong><br><div class="data-big">${integerWithCommas(totalAmount)} <span style="font-size:1rem;">${getCurrencySymbol()}</span></div></div>
+                <div class="info-card blue-edge"><i class="fas fa-gem"></i> <strong>${t('downPaymentLabel')}</strong><br><div class="data-big">${integerWithCommas(downPaymentAmount)} <span style="font-size:1rem;">${getCurrencySymbol()}</span></div><span class="metric-large">(${downPercentageText})</span></div>
+                <div class="info-card" style="background:#eef5ff;"><i class="fas fa-equals"></i> <strong>${t('monthlyInstallLabel')}</strong><br><div class="data-big">${integerWithCommas(monthlyInteger)} <span style="font-size:1rem;">${getCurrencySymbol()}</span></div><span class="metric-large">${t('lastMayVary')}</span></div>
+                <div class="info-card"><i class="fas fa-layer-group"></i> <strong>${t('installmentsCountLabel')}</strong><br><span class="highlight-value" style="font-size:1.6rem;">${installmentsCount} ${currentLang === 'ar' ? 'قسط' : 'installments'}</span></div>
+                <div class="info-card"><i class="fas fa-credit-card"></i> <strong>${t('paymentMethodLabel')}</strong><br><span class="metric-large">${paymentMethod}</span></div>
             </div>
             ${scheduleHtml}
             ${clientSignatureHtml}
-            <div class="footer-note" style="margin-top:12px;">
-                ${t('paymentTermsApply')}
-            </div>
+            <div class="footer-note" style="margin-top:12px;">${t('paymentTermsApply')}</div>
         `;
     }
     
+    // ========== PDF EXPORT (with integer formatting) ==========
     async function exportFullPDF() {
         updateCalculationAndDisplay();
         await new Promise(r => setTimeout(r, 80));
-        
         const { jsPDF } = window.jspdf;
         const container = document.createElement('div');
         container.style.position = 'fixed';
@@ -869,7 +749,6 @@
             container.appendChild(pageDiv);
             return pageDiv;
         }
-        
         let currentPage = createPage();
         const safeHeight = 1050;
         
@@ -877,58 +756,30 @@
             const data = lastCalcData;
             const isInstallment = data.installmentsCount > 0;
             let scheduleRows = '';
-            let totalInstallmentsSum = 0;
+            let totalDisplaySum = 0;
             if (isInstallment && data.schedule.length > 0) {
                 for (let inst of data.schedule) {
-                    const amt = parseFloat(inst.amount);
-                    totalInstallmentsSum += amt;
-                    scheduleRows += `
-                        <tr>
-                            <td style="padding:6px; border-bottom:1px solid #ddd; font-size:0.9rem;">${inst.number}</td>
-                            <td style="padding:6px; border-bottom:1px solid #ddd; font-size:0.9rem;">${inst.dueDate}</td>
-                            <td style="padding:6px; border-bottom:1px solid #ddd; font-size:0.9rem;">${inst.amount} ${getCurrencySymbol()}</td>
-                        </tr>
-                    `;
+                    const intAmt = Math.floor(inst.amount);
+                    totalDisplaySum += intAmt;
+                    scheduleRows += `<tr><td style="padding:6px; border-bottom:1px solid #ddd;">${inst.number}</td><td style="padding:6px; border-bottom:1px solid #ddd;">${inst.dueDate}</td><td style="padding:6px; border-bottom:1px solid #ddd;">${integerWithCommas(intAmt)} ${getCurrencySymbol()}</td></tr>`;
                 }
-                scheduleRows += `
-                    <tr style="border-top:1px solid #aaa;">
-                        <td colspan="2" style="padding:6px; text-align:left; font-weight:bold; font-size:0.9rem;">${t('totalInstallmentsSum')}</td>
-                        <td style="padding:6px; font-weight:bold; font-size:0.9rem;">${totalInstallmentsSum.toFixed(3)} ${getCurrencySymbol()}</td>
-                    </tr>
-                `;
+                scheduleRows += `<tr style="border-top:1px solid #aaa;"><td colspan="2" style="padding:6px; text-align:left; font-weight:bold;">${t('totalInstallmentsSum')}</td><td style="padding:6px; font-weight:bold;">${integerWithCommas(totalDisplaySum)} ${getCurrencySymbol()}</td></tr>`;
             }
-            
-            const signatureBlock = `
-                <div style="margin-top: 12px; padding-top: 8px; border-top: 2px dashed #aaa; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; font-size:0.85rem;">
-                    <span><strong>${t('signatureBlockText')}:</strong> _________________________</span>
-                    <span><strong>${t('dateSignature')}</strong> ___ / ___ / 2026</span>
-                </div>
-            `;
-            
+            const monthFirst = (data.schedule.length > 0) ? integerWithCommas(Math.floor(data.schedule[0].amount)) : "0";
+            const signatureBlock = `<div style="margin-top:12px; padding-top:8px; border-top:2px dashed #aaa; display:flex; justify-content:space-between; flex-wrap:wrap;"><span><strong>${t('signatureBlockText')}:</strong> _________________________</span><span><strong>${t('dateSignature')}</strong> ___ / ___ / 2026</span></div>`;
             return `
-                <div style="text-align:center; margin-bottom:16px;">
-                    <img src="https://i.postimg.cc/ZK4kBD7D/klynk.jpg" style="height:55px; margin-bottom:6px;" alt="logo">
-                    <h2 style="color:#1e3a5f; margin:4px 0; font-size:1.4rem;">${t('clinicName')}</h2>
-                    <p style="color:#2c6e2c; font-size:0.8rem;">${t('clinicSub')} – ${t('fiscalYear')}</p>
-                    <hr style="margin:10px 0;">
-                </div>
+                <div style="text-align:center; margin-bottom:16px;"><img src="https://i.postimg.cc/ZK4kBD7D/klynk.jpg" style="height:55px;"><h2 style="color:#1e3a5f;">${t('clinicName')}</h2><p style="color:#2c6e2c;">${t('clinicSub')} – ${t('fiscalYear')}</p><hr></div>
                 <div style="margin-bottom:16px; font-size:0.85rem;">
                     <p><strong>📌 ${t('clientNameText')}:</strong> ${escapeHtml(data.clientName)}</p>
                     <p><strong>📅 ${t('reportDatePrefix')}:</strong> ${data.todayDateStr}</p>
-                    <p><strong>💰 ${t('totalContractLabel')}:</strong> ${formatNumber(data.totalAmount)} ${t('currencyLabel')}</p>
+                    <p><strong>💰 ${t('totalContractLabel')}:</strong> ${integerWithCommas(data.totalAmount)} ${t('currencyLabel')}</p>
                     <p><strong>🔄 ${t('paymentMethodLabel')}:</strong> ${data.paymentMethod}</p>
                     ${data.installmentsCount > 0 ? `<p><strong>📆 ${t('installmentsCountLabel')}:</strong> ${data.installmentsCount} ${currentLang === 'ar' ? 'قسط' : 'installments'}</p>` : ''}
-                    ${data.installmentsCount > 0 ? `<p><strong>💎 ${t('downPaymentLabel')}:</strong> ${data.downPercentageText} (${formatNumber(data.downPaymentAmount)} ${getCurrencySymbol()})</p>` : ''}
-                    ${data.installmentsCount > 0 ? `<p><strong>📈 ${t('monthlyApprox')}:</strong> ${data.schedule.length > 0 ? data.schedule[0].amount : '0'} ${getCurrencySymbol()}</p>` : '<p style="color:#155724;">✅ ' + t('paidFullCash') + '</p>'}
+                    ${data.installmentsCount > 0 ? `<p><strong>💎 ${t('downPaymentLabel')}:</strong> ${data.downPercentageText} (${integerWithCommas(data.downPaymentAmount)} ${getCurrencySymbol()})</p>` : ''}
+                    ${data.installmentsCount > 0 ? `<p><strong>📈 ${t('monthlyApprox')}:</strong> ${monthFirst} ${getCurrencySymbol()}</p>` : '<p>✅ ' + t('paidFullCash') + '</p>'}
                     ${data.installmentsCount > 0 ? `<p><strong>🗓 ${t('startsFrom')}:</strong> ${data.startDateStr}</p>` : ''}
                 </div>
-                ${isInstallment && scheduleRows ? `
-                <h3 style="background:#1976d2; color:white; padding:6px; border-radius:8px; text-align:center; font-size:1rem; margin:8px 0;">${t('scheduleTitle')}</h3>
-                <table style="width:100%; border-collapse:collapse; margin-top:8px;">
-                    <thead><tr style="background:#0d47a1; color:white;"><th style="padding:6px; font-size:0.85rem;">${t('installmentNo')}</th><th style="padding:6px; font-size:0.85rem;">${t('dueDate')}</th><th style="padding:6px; font-size:0.85rem;">${t('amountKWD')}</th></tr></thead>
-                    <tbody>${scheduleRows}</tbody>
-                </table>
-                ` : `<div style="background:#e9ecef; padding:8px; border-radius:12px; font-size:0.85rem;">${t('noScheduleCash')}</div>`}
+                ${isInstallment && scheduleRows ? `<h3 style="background:#1976d2; color:white; padding:6px; border-radius:8px; text-align:center;">${t('scheduleTitle')}</h3><table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#0d47a1; color:white;"><th style="padding:6px;">${t('installmentNo')}</th><th style="padding:6px;">${t('dueDate')}</th><th style="padding:6px;">${t('amountKWD')}</th></tr></thead><tbody>${scheduleRows}</tbody></table>` : `<div style="background:#e9ecef; padding:8px; border-radius:12px;">${t('noScheduleCash')}</div>`}
                 ${signatureBlock}
             `;
         }
@@ -947,14 +798,11 @@
                 }
             }
         }
-        
         const fullHtml = buildReportHTML();
         appendHTMLToPages(fullHtml);
-        
         const pdf = new jsPDF('p', 'pt', 'a4');
         const imgWidth = pdf.internal.pageSize.getWidth();
         const pagesDivs = Array.from(container.children);
-        
         try {
             for (let idx = 0; idx < pagesDivs.length; idx++) {
                 const canvas = await html2canvas(pagesDivs[idx], { scale: 1.9, useCORS: true });
@@ -964,67 +812,63 @@
                 pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
             }
             pdf.save(`${currentLang === 'ar' ? 'تقرير_قسط' : 'Installment_Report'}_${lastCalcData.clientName || 'Client'}_2026.pdf`);
-        } catch (err) {
-            console.error(err);
-            alert(currentLang === 'ar' ? "حدث خطأ أثناء إنشاء PDF" : "Error generating PDF");
-        } finally {
-            document.body.removeChild(container);
-        }
+        } catch (err) { alert(currentLang === 'ar' ? "خطأ في PDF" : "PDF error"); }
+        finally { document.body.removeChild(container); }
     }
     
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
+    // UI helpers and language
+    function translateStaticElements() {
+        const tText = translations[currentLang];
+        document.title = tText.pageTitle;
+        document.getElementById('pageTitle').innerText = tText.pageTitle;
+        document.getElementById('clinicName').innerText = tText.clinicName;
+        document.getElementById('clinicSub').innerText = tText.clinicSub;
+        document.getElementById('fiscalYearText').innerText = tText.fiscalYear;
+        document.getElementById('clientNameLabel').innerHTML = `<i class="fas fa-user"></i> ${tText.clientNameLabel}`;
+        document.getElementById('totalAmountLabel').innerHTML = `<i class="fas fa-coins"></i> ${tText.totalAmountLabel}`;
+        document.getElementById('processStartLabel').innerHTML = `<i class="fas fa-calendar-plus"></i> ${tText.processStartLabel}`;
+        document.getElementById('firstInstallLabel').innerHTML = `<i class="fas fa-calendar-alt"></i> ${tText.firstInstallLabel}`;
+        document.getElementById('calcBtnText').innerText = tText.calcBtn;
+        document.getElementById('pdfBtnText').innerText = tText.pdfBtn;
+        document.getElementById('initialPlaceholder').innerHTML = `<i class="fas fa-hand-holding-usd fa-3x"></i><p>${tText.initialMsg}</p>`;
+        document.getElementById('footerConditions').innerHTML = `<i class="fas fa-info-circle"></i> ${tText.footerConditions}`;
+        document.getElementById('devTitle').innerText = tText.devTitle;
+        const langSpan = document.getElementById('langBtnText');
+        langSpan.innerText = currentLang === 'ar' ? 'English/عربـــي' : 'عربي';
+        const clientNameInput = document.getElementById('clientName');
+        if (clientNameInput) clientNameInput.placeholder = currentLang === 'ar' ? 'أدخل الاسم الكامل' : 'Enter full name';
     }
-    
-    function formatNumber(num, decimals = 3) {
-        if (num === undefined || isNaN(num)) num = 0;
-        return num.toFixed(decimals).toString();
+    function updatePageDirection() {
+        const body = document.body;
+        if (currentLang === 'en') { body.classList.remove('ar-mode'); body.classList.add('en-mode'); body.setAttribute('dir', 'ltr'); }
+        else { body.classList.remove('en-mode'); body.classList.add('ar-mode'); body.setAttribute('dir', 'rtl'); }
     }
-    
     function setDefaultDates() {
         const today = new Date();
         const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        const todayStr = `${yyyy}-${mm}-${dd}`;
-        const processDateInput = document.getElementById('processStartDate');
-        if (processDateInput && !processDateInput.value) processDateInput.value = todayStr;
-        
+        const mm = String(today.getMonth() + 1).padStart(2,'0');
+        const dd = String(today.getDate()).padStart(2,'0');
+        if (!document.getElementById('processStartDate').value) document.getElementById('processStartDate').value = `${yyyy}-${mm}-${dd}`;
         const nextMonthFirst = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-        const nextYear = nextMonthFirst.getFullYear();
-        const nextMonth = String(nextMonthFirst.getMonth() + 1).padStart(2, '0');
-        const nextDay = String(nextMonthFirst.getDate()).padStart(2, '0');
-        const defaultFirstInstallment = `${nextYear}-${nextMonth}-${nextDay}`;
-        const firstInstallDateInput = document.getElementById('firstInstallmentDate');
-        if (firstInstallDateInput && !firstInstallDateInput.value) firstInstallDateInput.value = defaultFirstInstallment;
+        const nextY = nextMonthFirst.getFullYear();
+        const nextM = String(nextMonthFirst.getMonth() + 1).padStart(2,'0');
+        const nextD = String(nextMonthFirst.getDate()).padStart(2,'0');
+        if (!document.getElementById('firstInstallmentDate').value) document.getElementById('firstInstallmentDate').value = `${nextY}-${nextM}-${nextD}`;
     }
-    
     function bindAutoUpdate() {
-        const inputs = ['clientName', 'totalAmount', 'processStartDate', 'firstInstallmentDate'];
-        inputs.forEach(id => {
+        ['clientName','totalAmount','processStartDate','firstInstallmentDate'].forEach(id => {
             const el = document.getElementById(id);
-            if (el) {
-                el.addEventListener('input', updateCalculationAndDisplay);
-                el.addEventListener('change', updateCalculationAndDisplay);
-            }
+            if (el) { el.addEventListener('input', updateCalculationAndDisplay); el.addEventListener('change', updateCalculationAndDisplay); }
         });
         document.getElementById('calculateBtn').addEventListener('click', updateCalculationAndDisplay);
         document.getElementById('exportPdfBtn').addEventListener('click', exportFullPDF);
     }
-    
     function switchLanguage() {
         currentLang = currentLang === 'ar' ? 'en' : 'ar';
         translateStaticElements();
         updatePageDirection();
-        updateCalculationAndDisplay(); // full refresh with new currency and texts
+        updateCalculationAndDisplay();
     }
-    
     document.getElementById('langToggleBtn').addEventListener('click', switchLanguage);
     setDefaultDates();
     bindAutoUpdate();
