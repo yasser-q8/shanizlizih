@@ -297,7 +297,7 @@
             background: #f1f9ff;
         }
         .footer-note {
-            margin-top: 20px;
+            margin-top: 0px;
             font-size: 0.75rem;
             text-align: center;
             color: #5d7a8c;
@@ -347,7 +347,8 @@
             border-right: 8px solid #b8860b;
             border-radius: 20px;
             padding: 0.9rem 1.2rem;
-            margin-top: 1rem;
+            margin-top: 0.8rem;
+            margin-bottom: 0.2rem;
             font-family: 'Tajawal', 'Cairo', sans-serif;
             line-height: 1.6;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -359,16 +360,16 @@
         .acknowledgment-text {
             font-size: 0.93rem;
             color: #2c2418;
-            margin-bottom: 0.8rem;
+            margin-bottom: 0.6rem;
             text-align: justify;
         }
         .acknowledgment-signatures {
             display: flex;
             flex-wrap: wrap;
             justify-content: space-between;
-            gap: 0.8rem;
-            margin-top: 0.8rem;
-            padding-top: 0.5rem;
+            gap: 0.6rem;
+            margin-top: 0.6rem;
+            padding-top: 0.4rem;
             border-top: 1px dashed #bc9a6c;
         }
         .sig-field {
@@ -384,6 +385,14 @@
             border-bottom: 1px solid #8b6946;
             min-width: 120px;
             margin-right: 6px;
+        }
+        /* جملة السياسة مرفوعة بمسافة صغيرة */
+        .policy-statement {
+            margin-top: 4px;
+            margin-bottom: 0;
+            font-size: 0.7rem;
+            text-align: center;
+            color: #5d7a8c;
         }
         @media (max-width: 768px) { 
             .signature-card { 
@@ -470,7 +479,7 @@
 </a>
 
 <script>
-    // ========================= تفقيط مطابق لدالة VBA المقدمة (محولة إلى JS) =========================
+    // ========================= التفقيط المطابق لدالة VBA المقدمة (محول بدقة) =========================
     function numToArabicWords(Num) {
         if (Num === 0) return "صفر";
         let Units = ["", "واحد", "اثنان", "ثلاثة", "أربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة"];
@@ -537,7 +546,7 @@
     }
 
     function tafqeetKWD(Amount) {
-        // Amount بالدينار (رقم عشري حتى 3 منازل)
+        // Amount بالدينار (float حتى 3 أرقام عشرية)
         let rounded = Math.round(Amount * 1000) / 1000;
         let Dinar = Math.floor(rounded);
         let Fils = Math.round((rounded - Dinar) * 1000);
@@ -731,7 +740,7 @@
     function generateAcknowledgmentHTML(remainingAmount) {
         if (!remainingAmount || remainingAmount <= 0) return "";
         const amountNumber = Math.floor(remainingAmount);
-        const amountWords = tafqeetKWD(remainingAmount); // استخدام الدالة الجديدة
+        const amountWords = tafqeetKWD(remainingAmount);
         const acknowledgmentTextAr = `ألتزم أنا الموقع أدناه بسداد مبلغ وقدره ${integerWithCommas(amountNumber)} د.ك (${amountWords}) خلال المواعيد المذكورة بالجدول أعلاه دون تأخير أو مماطلة، وفي حال تأخرت عن سداد قسط واحد أو إخلالي بأي شرط من شروط العقد فإن ذلك يسقط الأجل ويستحق الدين بأكمله ويعتبر واجب السداد فوراً دون التقيد بميعاد الإستحقاق ودون حاجة لأي تنبيه أو إنذار أو حكم قضائي، وهذا إقرار مني على ذلك.`;
         return `
         <div class="acknowledgment-block">
@@ -814,7 +823,7 @@
             for (let inst of schedule) {
                 const integerAmount = Math.floor(inst.amount);
                 totalDisplaySum += integerAmount;
-                rowsHtml += `<tr><td>${inst.number}</td><td>${inst.dueDate}</td><td>${integerWithCommas(integerAmount)} ${getCurrencySymbol()}</td></tr>`;
+                rowsHtml += `<tr><tr>${inst.number}</td><td>${inst.dueDate}</td><td>${integerWithCommas(integerAmount)} ${getCurrencySymbol()}</td></tr>`;
             }
             rowsHtml += `<tr style="border-top: 1px solid #dee2e6;"><td colspan="2" style="text-align:left; font-weight:bold;">${t('totalInstallmentsSum')}</td><td style="font-weight:bold;">${integerWithCommas(totalDisplaySum)} ${getCurrencySymbol()}</td></tr>`;
             scheduleHtml = `<div class="installment-plan"><h4 style="margin-bottom:8px;"><i class="fas fa-calendar-week"></i> ${t('scheduleTitle')} (${t('startsFrom')} ${startDateStr})</h4><table class="installment-table" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}" style="width:100%;"><thead><tr><th>${t('installmentNo')}</th><th>${t('dueDate')}</th><th>${t('amountKWD')}</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
@@ -823,6 +832,7 @@
         const monthlyInteger = schedule.length > 0 ? Math.floor(schedule[0].amount) : 0;
         const acknowledgmentHtml = (installmentsCount > 0 && totalRemaining > 0) ? generateAcknowledgmentHTML(totalRemaining) : '';
         
+        // تجميع كل العناصر مع رفع جملة السياسة أسفل الإقرار مباشرة
         resultsDiv.innerHTML = `
             <div class="result-summary">
                 <div class="info-card" style="border-right-color:#2c7da0;"><i class="fas fa-id-card"></i> <strong>${t('clientNameText')}</strong><br><span class="highlight-name">${escapeHtml(clientName) || t('emptyNameFallback')}</span></div>
@@ -834,11 +844,11 @@
             </div>
             ${scheduleHtml}
             ${acknowledgmentHtml}
-            <div class="footer-note" style="margin-top:12px;">${t('paymentTermsApply')}</div>
+            <div class="policy-statement">${t('paymentTermsApply')}</div>
         `;
     }
     
-    // تصدير PDF مع جملة "تطبق الشروط..." في الصفحة الأولى أسفل الإقرار
+    // تصدير PDF مع رفع الجملة لأعلى وإزالة المسافة الزائدة
     async function exportFullPDF() {
         updateCalculationAndDisplay();
         await new Promise(r => setTimeout(r, 80));
@@ -863,7 +873,7 @@
             return pageDiv;
         }
         let currentPage = createPage();
-        const safeHeight = 1050;
+        const safeHeight = 1150;
         
         function buildReportHTML() {
             const data = lastCalcData;
@@ -903,11 +913,12 @@
                     ${data.installmentsCount > 0 ? `<p><strong>🗓 ${t('startsFrom')}:</strong> ${data.startDateStr}</p>` : ''}
                 </div>
                 ${isInstallment && scheduleRows ? `<h3 style="background:#1976d2; color:white; padding:6px; border-radius:8px; text-align:center;">${t('scheduleTitle')}</h3><table style="width:100%; border-collapse:collapse;" dir="${summaryDir}"><thead><tr style="background:#0d47a1; color:white;"><th style="padding:5px;">${t('installmentNo')}</th><th style="padding:5px;">${t('dueDate')}</th><th style="padding:5px;">${t('amountKWD')}</th></tr></thead><tbody>${scheduleRows}</tbody></table>` : `<div style="background:#e9ecef; padding:8px; border-radius:12px;">${t('noScheduleCash')}</div>`}
-                ${acknowledgmentSection}
-                <!-- رفع جملة السياسة لتظهر في الصفحة الأولى أسفل الإقرار -->
-                <div style="margin-top:16px; font-size:0.7rem; text-align:center; color:#5f7a8c;">${t('paymentTermsApply')}</div>
+               ${acknowledgmentSection}
+                <div style="margin-top: 42px; margin-bottom: 5px; font-size: 0.75rem; text-align: center; color: #5f7a8c; font-weight: bold;">
+                    ${t('paymentTermsApply')}
+                </div>
             `;
-        }
+}
         
         function appendHTMLToPages(htmlString) {
             const tempDiv = document.createElement('div');
