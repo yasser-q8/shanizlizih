@@ -966,7 +966,13 @@
         document.getElementById('firstInstallLabel').innerHTML = `<i class="fas fa-calendar-alt"></i> ${tText.firstInstallLabel}`;
         document.getElementById('calcBtnText').innerText = tText.calcBtn;
         document.getElementById('pdfBtnText').innerText = tText.pdfBtn;
-        document.getElementById('initialPlaceholder').innerHTML = `<i class="fas fa-hand-holding-usd fa-3x"></i><p>${tText.initialMsg}</p>`;
+        
+        // التعديل هنا: نتحقق من وجود العنصر قبل محاولة ترجمته لتجنب توقف الكود
+        const initialDiv = document.getElementById('initialPlaceholder');
+        if (initialDiv) {
+            initialDiv.innerHTML = `<i class="fas fa-hand-holding-usd fa-3x"></i><p>${tText.initialMsg}</p>`;
+        }
+        
         document.getElementById('footerConditions').innerHTML = `<i class="fas fa-info-circle"></i> ${tText.footerConditions}`;
         document.getElementById('devTitle').innerText = tText.devTitle;
         const langSpan = document.getElementById('langBtnText');
@@ -974,6 +980,7 @@
         const clientNameInput = document.getElementById('clientName');
         if (clientNameInput) clientNameInput.placeholder = currentLang === 'ar' ? 'أدخل الاسم الكامل' : 'Enter full name';
     }
+
     function updatePageDirection() {
         const body = document.body;
         if (currentLang === 'en') { body.classList.remove('ar-mode'); body.classList.add('en-mode'); body.setAttribute('dir', 'ltr'); }
