@@ -162,6 +162,15 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(33,150,243,0.2);
         }
+        /* منع ظهور أسهم في حقول الأرقام */
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
         .btn-group {
             display: flex;
             flex-wrap: wrap;
@@ -384,6 +393,27 @@
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 0.8rem;
         }
+        /* Toast رسالة تحذير */
+        .toast-warning {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #d32f2f;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: bold;
+            z-index: 2000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 0.9rem;
+            white-space: nowrap;
+            direction: rtl;
+            font-family: inherit;
+        }
+        body.en-mode .toast-warning {
+            direction: ltr;
+        }
         @media (max-width: 768px) { 
             .signature-card { 
                 position: relative; 
@@ -396,6 +426,7 @@
             } 
             .field-client, .field-civil, .field-total { flex: 1 1 100%; }
             .acknowledgment-signatures { flex-direction: column; }
+            .toast-warning { white-space: normal; text-align: center; width: 90%; font-size: 0.8rem; }
         }
         @media (max-width: 700px) {
             .calc-body { padding: 1rem; }
@@ -420,7 +451,7 @@
                 </div>
             </div>
             <div class="year-badge" id="yearBadge">
-                <i class="fas fa-file-signature"></i> <span id="fiscalYearText">إقرار رسمي 2026</span>
+                <i class="fas fa-file-signature"></i> <span id="fiscalYearText">إقرار رسمي</span>
             </div>
         </div>
 
@@ -432,11 +463,11 @@
                 </div>
                 <div class="field field-civil">
                     <label for="civilId" id="civilIdLabel"><i class="fas fa-id-card"></i> الرقم المدني</label>
-                    <input type="text" id="civilId" placeholder="123456789012" value="">
+                    <input type="text" id="civilId" inputmode="numeric" pattern="\d*" placeholder="12 رقم" maxlength="12" value="">
                 </div>
                 <div class="field field-civil">
                     <label for="phoneNumber" id="phoneLabel"><i class="fas fa-phone-alt"></i> تليفون العميل</label>
-                    <input type="tel" id="phoneNumber" placeholder="+965 ********" value="">
+                    <input type="tel" id="phoneNumber" inputmode="numeric" pattern="\d*" placeholder="8 أرقام" maxlength="8" value="">
                 </div>
                 <div class="field field-civil">
                     <label for="contractNumber" id="contractNumberLabel"><i class="fas fa-hashtag"></i> رقم العقد</label>
@@ -577,7 +608,7 @@
             pageTitle: "كلينك شانزليزيه | إقرار و تعهد بسداد الرسوم الطبية",
             clinicName: "كلينك شانزليزيه",
             clinicSub: "إقرار و تعهد بسداد الرسوم الطبية",
-            fiscalYear: "إقرار رسمي 2026",
+            fiscalYear: "إقرار رسمي",
             clientNameLabel: "اسم المريض",
             civilIdLabel: "الرقم المدني",
             phoneLabel: "تليفون العميل",
@@ -618,13 +649,16 @@
             civilId: "الرقم المدني",
             phone: "الهاتف",
             contractNo: "رقم العقد",
-            contractDate: "تاريخ العقد"
+            contractDate: "تاريخ العقد",
+            warningInvalidCivil: "⚠️ الرقم المدني يجب أن يكون 12 رقمًا (أو اتركه فارغًا)",
+            warningInvalidPhone: "⚠️ رقم الهاتف يجب أن يكون 8 أرقام (أو اتركه فارغًا)",
+            warningTitle: "تنبيه"
         },
         en: {
             pageTitle: "Champs-Élysées Clinic | Medical Fees Acknowledgment",
             clinicName: "Champs-Élysées Clinic",
             clinicSub: "Acknowledgment & Undertaking to Pay Medical Fees",
-            fiscalYear: "Official Undertaking 2026",
+            fiscalYear: "Official Undertaking",
             clientNameLabel: "Patient Name",
             civilIdLabel: "Civil ID",
             phoneLabel: "Phone Number",
@@ -665,7 +699,10 @@
             civilId: "Civil ID",
             phone: "Phone",
             contractNo: "Contract No.",
-            contractDate: "Contract Date"
+            contractDate: "Contract Date",
+            warningInvalidCivil: "⚠️ Civil ID must be 12 digits (or leave empty)",
+            warningInvalidPhone: "⚠️ Phone number must be 8 digits (or leave empty)",
+            warningTitle: "Warning"
         }
     };
 
@@ -737,6 +774,43 @@
         return `<div class="acknowledgment-block"><div class="acknowledgment-text">${acknowledgmentTextAr}</div><div class="acknowledgment-signatures"><div class="sig-field"><strong>توقيع المقر بما فيه :</strong></div><div class="sig-field"><strong>الإسم :</strong> <span class="sig-line">_________________</span></div><div class="sig-field"><strong>الصفة :</strong> <span class="sig-line">_________________</span></div><div class="sig-field"><strong>التاريخ :</strong> <span class="sig-line">_________________</span></div><div class="sig-field"><strong>التوقيع :</strong> <span class="sig-line">_________________</span></div></div></div>`;
     }
 
+    function showToast(message) {
+        let existing = document.querySelector('.toast-warning');
+        if(existing) existing.remove();
+        let toast = document.createElement('div');
+        toast.className = 'toast-warning';
+        toast.innerText = message;
+        document.body.appendChild(toast);
+        setTimeout(() => { if(toast) toast.remove(); }, 4000);
+    }
+
+    // التحقق من صحة الرقم المدني والهاتف قبل PDF
+    function validateIdsForExport() {
+        let civil = document.getElementById('civilId').value.trim();
+        let phone = document.getElementById('phoneNumber').value.trim();
+        let isValid = true;
+        let warningMsg = "";
+
+        // إذا كان الحقل غير فارغ، يجب أن يكون 12 رقماً
+        if(civil !== "") {
+            if(!/^\d{12}$/.test(civil)) {
+                isValid = false;
+                warningMsg = t('warningInvalidCivil');
+            }
+        }
+        if(phone !== "") {
+            if(!/^\d{8}$/.test(phone)) {
+                isValid = false;
+                warningMsg = warningMsg ? warningMsg + " / " + t('warningInvalidPhone') : t('warningInvalidPhone');
+            }
+        }
+        if(!isValid) {
+            showToast(warningMsg);
+            return false;
+        }
+        return true;
+    }
+
     function updateCalculationAndDisplay() {
         const totalAmount = parseFloat(document.getElementById('totalAmount').value) || 0;
         const clientName = document.getElementById('clientName').value.trim();
@@ -806,7 +880,7 @@
             for (let inst of schedule) {
                 const intAmt = Math.floor(inst.amount);
                 totalDisplaySum += intAmt;
-                rowsHtml += `<tr><td>${inst.number}</td><td>${inst.dueDate}</td><td>${integerWithCommas(intAmt)} ${getCurrencySymbol()}</td></tr>`;
+                rowsHtml += `<tr><td style="padding:5px 6px;">${inst.number}</td><td style="padding:5px 6px;">${inst.dueDate}</td><td style="padding:5px 6px;">${integerWithCommas(intAmt)} ${getCurrencySymbol()}</td></tr>`;
             }
             rowsHtml += `<tr style="border-top:1px solid #dee2e6;"><td colspan="2" style="text-align:left; font-weight:bold;">${t('totalInstallmentsSum')}</td><td style="font-weight:bold;">${integerWithCommas(totalDisplaySum)} ${getCurrencySymbol()}</td></tr>`;
             scheduleHtml = `<div class="installment-plan"><h4 style="margin-bottom:6px;"><i class="fas fa-calendar-week"></i> ${t('scheduleTitle')} (${t('startsFrom')} ${startDateStr})</h4><table class="installment-table" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}" style="width:100%;"><thead><tr><th>${t('installmentNo')}</th><th>${t('dueDate')}</th><th>${t('amountKWD')}</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
@@ -833,8 +907,11 @@
         `;
     }
     
-    // PDF export مع ضغط صفوف الجدول بنسبة ~10%
+    // PDF export مع التحقق المسبق
     async function exportFullPDF() {
+        // التحقق من صحة الرقم المدني والهاتف
+        if(!validateIdsForExport()) return;
+        
         updateCalculationAndDisplay();
         await new Promise(r => setTimeout(r, 80));
         const { jsPDF } = window.jspdf;
@@ -872,7 +949,7 @@
                 <div style="text-align:center; margin-bottom:12px;">
                     <img src="https://i.postimg.cc/ZK4kBD7D/klynk.jpg" style="height:55px;">
                     <h2 style="color:#1e3a5f; margin:4px 0;">${t('clinicName')}</h2>
-                    <p style="color:#2c6e2c; font-weight:bold;">${t('clinicSub')} – ${t('fiscalYear')}</p>
+                    <p style="color:#2c6e2c; font-weight:bold;">${t('clinicSub')}</p>
                     <hr>
                 </div>
                 <div dir="${summaryDir}" style="margin-bottom:12px; font-size:0.82rem; line-height:1.3;">
@@ -924,6 +1001,16 @@
         finally { document.body.removeChild(container); }
     }
     
+    // منع إدخال حروف في الرقم المدني والهاتف
+    function restrictNumericInput(e) {
+        let input = e.target;
+        let val = input.value;
+        val = val.replace(/[^\d]/g, '');
+        if(input.id === 'civilId' && val.length > 12) val = val.slice(0,12);
+        if(input.id === 'phoneNumber' && val.length > 8) val = val.slice(0,8);
+        input.value = val;
+    }
+    
     // Translations & UI binding
     function translateStaticElements() {
         const tText = translations[currentLang];
@@ -948,7 +1035,7 @@
         document.getElementById('langBtnText').innerText = currentLang === 'ar' ? 'English/عربـــي' : 'عربي';
         document.getElementById('clientName').placeholder = currentLang === 'ar' ? 'أدخل الاسم الكامل' : 'Enter full name';
         document.getElementById('civilId').placeholder = currentLang === 'ar' ? 'الرقم المدني 12 رقم' : 'Civil ID 12 digits';
-        document.getElementById('phoneNumber').placeholder = currentLang === 'ar' ? 'مثال: 51234567' : 'e.g., 51234567';
+        document.getElementById('phoneNumber').placeholder = currentLang === 'ar' ? 'الهاتف 8 أرقام' : 'Phone 8 digits';
         document.getElementById('contractNumber').placeholder = currentLang === 'ar' ? 'رقم العقد' : 'Contract No.';
     }
     function updatePageDirection() {
@@ -972,6 +1059,9 @@
         });
         document.getElementById('calculateBtn').addEventListener('click', updateCalculationAndDisplay);
         document.getElementById('exportPdfBtn').addEventListener('click', exportFullPDF);
+        // حصر الأرقام
+        document.getElementById('civilId').addEventListener('input', restrictNumericInput);
+        document.getElementById('phoneNumber').addEventListener('input', restrictNumericInput);
     }
     function switchLanguage() { currentLang = currentLang === 'ar' ? 'en' : 'ar'; translateStaticElements(); updatePageDirection(); updateCalculationAndDisplay(); }
     document.getElementById('langToggleBtn').addEventListener('click', switchLanguage);
