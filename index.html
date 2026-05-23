@@ -256,10 +256,10 @@
             border-right-color: transparent;
         }
         .installment-plan {
-            margin-top: 1.2rem;
+            margin-top: 0.8rem;
             background: #fef9e8;
             border-radius: 32px;
-            padding: 0.8rem;
+            padding: 0.5rem;
         }
         .installment-table {
             width: 100%;
@@ -272,24 +272,21 @@
         .installment-table th {
             background: #1e3a5f;
             color: white;
-            padding: 6px 8px;
+            padding: 4px 6px;
             font-weight: 600;
             text-align: center;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
         }
         .installment-table td {
-            padding: 5px 6px;
+            padding: 3px 4px;
             border-bottom: 1px solid #dee2e6;
             text-align: center;
             font-feature-settings: "tnum";
             font-variant-numeric: tabular-nums;
-            font-size: 0.85rem;
+            font-size: 0.7rem;
         }
         .installment-table tr:last-child td {
             border-bottom: none;
-        }
-        .installment-table tr:hover {
-            background: #f1f9ff;
         }
         .footer-note {
             margin-top: 0px;
@@ -340,11 +337,11 @@
             background: #fef7e0;
             border-right: 8px solid #b8860b;
             border-radius: 20px;
-            padding: 0.8rem 1rem;
-            margin-top: 0.8rem;
-            margin-bottom: 0.2rem;
+            padding: 0.5rem 0.8rem;
+            margin-top: 0.6rem;
+            margin-bottom: 0;
             font-family: 'Tajawal', 'Cairo', sans-serif;
-            line-height: 1.5;
+            line-height: 1.4;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         body.en-mode .acknowledgment-block {
@@ -352,23 +349,23 @@
             border-left: 8px solid #b8860b;
         }
         .acknowledgment-text {
-            font-size: 0.9rem;
+            font-size: 0.75rem;
             color: #2c2418;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
             text-align: justify;
         }
         .acknowledgment-signatures {
             display: flex;
             flex-wrap: wrap;
             justify-content: space-between;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-            padding-top: 0.4rem;
+            gap: 0.4rem;
+            margin-top: 0.3rem;
+            padding-top: 0.3rem;
             border-top: 1px dashed #bc9a6c;
         }
         .sig-field {
-            min-width: 130px;
-            font-size: 0.75rem;
+            min-width: 120px;
+            font-size: 0.65rem;
         }
         .sig-field strong {
             font-weight: 800;
@@ -377,20 +374,20 @@
         .sig-line {
             display: inline-block;
             border-bottom: 1px solid #8b6946;
-            min-width: 100px;
-            margin-right: 6px;
+            min-width: 80px;
+            margin-right: 4px;
         }
         .policy-statement {
-            margin-top: 6px;
+            margin-top: 4px;
             margin-bottom: 0;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             text-align: center;
             color: #5d7a8c;
         }
         .info-grid-2col {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 0.8rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.5rem;
         }
         .toast-warning {
             position: fixed;
@@ -399,12 +396,12 @@
             transform: translateX(-50%);
             background: #d32f2f;
             color: white;
-            padding: 12px 24px;
-            border-radius: 50px;
+            padding: 10px 18px;
+            border-radius: 40px;
             font-weight: bold;
             z-index: 2000;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             white-space: nowrap;
             direction: rtl;
             font-family: inherit;
@@ -424,7 +421,7 @@
             } 
             .field-client, .field-civil, .field-total { flex: 1 1 100%; }
             .acknowledgment-signatures { flex-direction: column; }
-            .toast-warning { white-space: normal; text-align: center; width: 90%; font-size: 0.8rem; }
+            .toast-warning { white-space: normal; text-align: center; width: 90%; font-size: 0.75rem; }
         }
         @media (max-width: 700px) {
             .calc-body { padding: 1rem; }
@@ -600,7 +597,6 @@
         });
     }
 
-    // تنسيق التاريخ إلى DD-MM-YYYY بأرقام إنجليزية
     function formatDateToEnglishDMY(dateObj) {
         if (!dateObj || isNaN(dateObj.getTime())) return "";
         let day = dateObj.getDate().toString().padStart(2, '0');
@@ -669,8 +665,7 @@
             warningInvalidCivil: "⚠️ الرقم المدني يجب أن يكون 12 رقمًا (أو اتركه فارغًا)",
             warningInvalidPhone: "⚠️ رقم الهاتف يجب أن يكون 8 أرقام (أو اتركه فارغًا)",
             warningEmptyCivil: "⚠️ لم يتم إدخال الرقم المدني",
-            warningEmptyPhone: "⚠️ لم يتم إدخال رقم الهاتف",
-            warningTitle: "تنبيه"
+            warningEmptyPhone: "⚠️ لم يتم إدخال رقم الهاتف"
         },
         en: {
             pageTitle: "Champs-Élysées Clinic | Medical Fees Acknowledgment",
@@ -721,8 +716,7 @@
             warningInvalidCivil: "⚠️ Civil ID must be 12 digits (or leave empty)",
             warningInvalidPhone: "⚠️ Phone number must be 8 digits (or leave empty)",
             warningEmptyCivil: "⚠️ Civil ID not entered",
-            warningEmptyPhone: "⚠️ Phone number not entered",
-            warningTitle: "Warning"
+            warningEmptyPhone: "⚠️ Phone number not entered"
         }
     };
 
@@ -734,7 +728,6 @@
         return text;
     }
 
-    // ===== شروط الأقساط =====
     const PAYMENT_THRESHOLD = 500;
     const TIER_Q1 = 501, TIER_R1 = 1501, TIER_S1 = 4001;
     function getInstallmentsCount(amount) {
@@ -804,32 +797,16 @@
         setTimeout(() => { if(toast) toast.remove(); }, 4000);
     }
 
-    // التحقق مع ظهور رسائل تحذير: إذا كان الحقل فارغًا نعرض تحذير ونسمح. إذا كان مكتوبًا جزئيًا وخطأ نمنع.
     function validateAndWarnForExport() {
         let civil = document.getElementById('civilId').value.trim();
         let phone = document.getElementById('phoneNumber').value.trim();
         let isValid = true;
         let warningMessages = [];
-
-        // فحص الرقم المدني
-        if(civil === "") {
-            warningMessages.push(t('warningEmptyCivil'));
-        } else if(!/^\d{12}$/.test(civil)) {
-            isValid = false;
-            warningMessages.push(t('warningInvalidCivil'));
-        }
-
-        // فحص الهاتف
-        if(phone === "") {
-            warningMessages.push(t('warningEmptyPhone'));
-        } else if(!/^\d{8}$/.test(phone)) {
-            isValid = false;
-            warningMessages.push(t('warningInvalidPhone'));
-        }
-
-        if(warningMessages.length > 0) {
-            showToast(warningMessages.join(" / "));
-        }
+        if(civil === "") warningMessages.push(t('warningEmptyCivil'));
+        else if(!/^\d{12}$/.test(civil)) { isValid = false; warningMessages.push(t('warningInvalidCivil')); }
+        if(phone === "") warningMessages.push(t('warningEmptyPhone'));
+        else if(!/^\d{8}$/.test(phone)) { isValid = false; warningMessages.push(t('warningInvalidPhone')); }
+        if(warningMessages.length > 0) showToast(warningMessages.join(" / "));
         return isValid;
     }
 
@@ -847,9 +824,7 @@
         
         const effectiveStart = getEffectiveStartDate(processDateValue, manualDateValue);
         const startDateStr = formatDateToEnglishDMY(effectiveStart);
-        
-        const today = new Date();
-        const todayFormatted = formatDateToEnglishDMY(today);
+        const todayFormatted = formatDateToEnglishDMY(new Date());
         
         let paymentMethod = '', installmentsCount = 0, downPaymentAmount = 0, downPercentageText = '', schedule = [];
         const isEligible = totalAmount > PAYMENT_THRESHOLD;
@@ -907,10 +882,10 @@
             for (let inst of schedule) {
                 const intAmt = Math.floor(inst.amount);
                 totalDisplaySum += intAmt;
-                rowsHtml += `<tr><td style="padding:5px 6px;">${inst.number}</td><td style="padding:5px 6px;">${inst.dueDate}</td><td style="padding:5px 6px;">${integerWithCommas(intAmt)} ${getCurrencySymbol()}</td></tr>`;
+                rowsHtml += `<tr><td style="padding:4px 5px;">${inst.number}</td><td style="padding:4px 5px;">${inst.dueDate}</td><td style="padding:4px 5px;">${integerWithCommas(intAmt)} ${getCurrencySymbol()}</td></tr>`;
             }
             rowsHtml += `<tr style="border-top:1px solid #dee2e6;"><td colspan="2" style="text-align:left; font-weight:bold;">${t('totalInstallmentsSum')}</td><td style="font-weight:bold;">${integerWithCommas(totalDisplaySum)} ${getCurrencySymbol()}</td></tr>`;
-            scheduleHtml = `<div class="installment-plan"><h4 style="margin-bottom:6px;"><i class="fas fa-calendar-week"></i> ${t('scheduleTitle')} (${t('startsFrom')} ${startDateStr})</h4><table class="installment-table" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}" style="width:100%;"><thead><tr><th>${t('installmentNo')}</th><th>${t('dueDate')}</th><th>${t('amountKWD')}</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+            scheduleHtml = `<div class="installment-plan"><h4 style="margin-bottom:4px; font-size:0.9rem;"><i class="fas fa-calendar-week"></i> ${t('scheduleTitle')} (${t('startsFrom')} ${startDateStr})</h4><table class="installment-table" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}" style="width:100%;"><thead><tr><th>${t('installmentNo')}</th><th>${t('dueDate')}</th><th>${t('amountKWD')}</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
         }
         const monthlyInteger = schedule.length > 0 ? Math.floor(schedule[0].amount) : 0;
         const acknowledgmentHtml = (installmentsCount > 0 && totalRemaining > 0) ? generateAcknowledgmentHTML(totalRemaining) : '';
@@ -925,7 +900,7 @@
                 <div class="info-card red-edge"><i class="fas fa-chart-line"></i> <strong>${t('totalContractLabel')}</strong><br><div class="data-big">${integerWithCommas(totalAmount)} ${getCurrencySymbol()}</div></div>
                 <div class="info-card blue-edge"><i class="fas fa-gem"></i> <strong>${t('downPaymentLabel')}</strong><br><div class="data-big">${integerWithCommas(downPaymentAmount)} ${getCurrencySymbol()}</div><span class="metric-large">(${downPercentageText})</span></div>
                 <div class="info-card"><i class="fas fa-equals"></i> <strong>${t('monthlyInstallLabel')}</strong><br><div class="data-big">${integerWithCommas(monthlyInteger)} ${getCurrencySymbol()}</div><span class="metric-large">${t('lastMayVary')}</span></div>
-                <div class="info-card"><i class="fas fa-layer-group"></i> <strong>${t('installmentsCountLabel')}</strong><br><span class="highlight-value" style="font-size:1.4rem;">${installmentsCount} ${currentLang === 'ar' ? 'قسط' : 'installments'}</span></div>
+                <div class="info-card"><i class="fas fa-layer-group"></i> <strong>${t('installmentsCountLabel')}</strong><br><span class="highlight-value" style="font-size:1.3rem;">${installmentsCount} ${currentLang === 'ar' ? 'قسط' : 'installments'}</span></div>
                 <div class="info-card"><i class="fas fa-credit-card"></i> <strong>${t('paymentMethodLabel')}</strong><br><span class="metric-large">${paymentMethod}</span></div>
             </div>
             ${scheduleHtml}
@@ -934,12 +909,9 @@
         `;
     }
     
-    // PDF export مع التحقق ورسائل التحذير
+    // PDF export - محسن ليكون صفحة واحدة على جميع الأجهزة
     async function exportFullPDF() {
-        // التحقق من صحة الرقم المدني والهاتف مع ظهور رسائل تحذير
-        const isValid = validateAndWarnForExport();
-        if (!isValid) return; // منع التصدير إذا كان هناك خطأ في الأرقام (غير فارغة وطول غير صحيح)
-        
+        if(!validateAndWarnForExport()) return;
         updateCalculationAndDisplay();
         await new Promise(r => setTimeout(r, 80));
         const { jsPDF } = window.jspdf;
@@ -947,15 +919,24 @@
         container.style.position = 'fixed';
         container.style.top = '0';
         container.style.left = '-9999px';
-        container.style.width = '794px';
+        container.style.width = '700px';        // عرض أقل قليلاً لتقليل المحتوى
         container.style.background = '#ffffff';
         container.style.direction = currentLang === 'ar' ? 'rtl' : 'ltr';
         container.style.fontFamily = "'Segoe UI', 'Tajawal', sans-serif";
         document.body.appendChild(container);
         
-        function createPage() { const div = document.createElement('div'); div.style.width = '794px'; div.style.padding = '25px'; div.style.background = '#ffffff'; div.style.boxSizing = 'border-box'; container.appendChild(div); return div; }
+        function createPage() { 
+            const div = document.createElement('div'); 
+            div.style.width = '700px'; 
+            div.style.padding = '12px';           // تقليل padding كبير
+            div.style.background = '#ffffff'; 
+            div.style.boxSizing = 'border-box'; 
+            container.appendChild(div); 
+            return div; 
+        }
         let currentPage = createPage();
-        const safeHeight = 1120;
+        // ارتفاع آمن أقل (A4 portrait ~ 1123px لكن نجعله 1050 لضمان الصفحة الواحدة)
+        const safeHeight = 1050;
         
         function buildReportHTML() {
             const data = lastCalcData;
@@ -966,21 +947,22 @@
                 for (let inst of data.schedule) {
                     const intAmt = Math.floor(inst.amount);
                     totalDisplaySum += intAmt;
-                    scheduleRows += `<tr><td style="padding:3px 5px; border-bottom:1px solid #ddd;">${inst.number}</td><td style="padding:3px 5px;">${inst.dueDate}</td><td style="padding:3px 5px;">${integerWithCommas(intAmt)} ${getCurrencySymbol()}</td></tr>`;
+                    scheduleRows += `<tr><td style="padding:2px 4px; border-bottom:1px solid #ddd;">${inst.number}</td><td style="padding:2px 4px;">${inst.dueDate}</td><td style="padding:2px 4px;">${integerWithCommas(intAmt)} ${getCurrencySymbol()}</td></tr>`;
                 }
-                scheduleRows += `<tr style="border-top:1px solid #aaa;"><td colspan="2" style="padding:4px 5px; text-align:left; font-weight:bold;">${t('totalInstallmentsSum')}</td><td style="padding:4px 5px; font-weight:bold;">${integerWithCommas(totalDisplaySum)} ${getCurrencySymbol()}</td></tr>`;
+                scheduleRows += `<tr style="border-top:1px solid #aaa;"><td colspan="2" style="padding:3px 4px; text-align:left; font-weight:bold;">${t('totalInstallmentsSum')}</td><td style="padding:3px 4px; font-weight:bold;">${integerWithCommas(totalDisplaySum)} ${getCurrencySymbol()}</td></tr>`;
             }
             const monthFirst = (data.schedule.length > 0) ? integerWithCommas(Math.floor(data.schedule[0].amount)) : "0";
             let acknowledgmentSection = (isInstallment && data.totalRemaining > 0) ? generateAcknowledgmentHTML(data.totalRemaining) : '';
             const summaryDir = currentLang === 'en' ? 'ltr' : 'rtl';
+            // تقليل المسافات والهوامش بشكل كبير
             return `
-                <div style="text-align:center; margin-bottom:12px;">
-                    <img src="https://i.postimg.cc/ZK4kBD7D/klynk.jpg" style="height:55px;">
-                    <h2 style="color:#1e3a5f; margin:4px 0;">${t('clinicName')}</h2>
-                    <p style="color:#2c6e2c; font-weight:bold;">${t('clinicSub')}</p>
-                    <hr>
+                <div style="text-align:center; margin-bottom:6px;">
+                    <img src="https://i.postimg.cc/ZK4kBD7D/klynk.jpg" style="height:45px;">
+                    <h2 style="color:#1e3a5f; margin:2px 0; font-size:1.2rem;">${t('clinicName')}</h2>
+                    <p style="color:#2c6e2c; font-weight:bold; font-size:0.7rem;">${t('clinicSub')}</p>
+                    <hr style="margin:4px 0;">
                 </div>
-                <div dir="${summaryDir}" style="margin-bottom:12px; font-size:0.82rem; line-height:1.3;">
+                <div dir="${summaryDir}" style="margin-bottom:6px; font-size:0.7rem; line-height:1.25;">
                     <p><strong>👤 ${t('clientNameText')}:</strong> ${escapeHtml(data.clientName)}</p>
                     <p><strong>🆔 ${t('civilId')}:</strong> ${escapeHtml(data.civilId) || '—'}</p>
                     <p><strong>📞 ${t('phone')}:</strong> ${escapeHtml(data.phoneNumber) || '—'}</p>
@@ -992,9 +974,9 @@
                     ${data.installmentsCount > 0 ? `<p><strong>💎 ${t('downPaymentLabel')}:</strong> ${data.downPercentageText} (${integerWithCommas(data.downPaymentAmount)} ${getCurrencySymbol()})</p>` : ''}
                     ${data.installmentsCount > 0 ? `<p><strong>📈 ${t('monthlyApprox')}:</strong> ${monthFirst} ${getCurrencySymbol()}</p><p><strong>🗓 ${t('startsFrom')}:</strong> ${data.startDateStr}</p>` : `<p>✅ ${t('paidFullCash')}</p>`}
                 </div>
-                ${isInstallment && scheduleRows ? `<h3 style="background:#1976d2; color:white; padding:4px; border-radius:6px; text-align:center; font-size:1rem; margin:6px 0;">${t('scheduleTitle')}</h3><table style="width:100%; border-collapse:collapse; font-size:0.8rem;"><thead><tr style="background:#0d47a1; color:white;"><th style="padding:4px;">${t('installmentNo')}</th><th style="padding:4px;">${t('dueDate')}</th><th style="padding:4px;">${t('amountKWD')}</th></tr></thead><tbody>${scheduleRows}</tbody></table>` : `<div style="background:#e9ecef; padding:8px; border-radius:12px; text-align:center;">${t('noScheduleCash')}</div>`}
+                ${isInstallment && scheduleRows ? `<h3 style="background:#1976d2; color:white; padding:2px; border-radius:4px; text-align:center; font-size:0.75rem; margin:4px 0;">${t('scheduleTitle')}</h3><table style="width:100%; border-collapse:collapse; font-size:0.65rem;"><thead><tr style="background:#0d47a1; color:white;"><th style="padding:3px;">${t('installmentNo')}</th><th style="padding:3px;">${t('dueDate')}</th><th style="padding:3px;">${t('amountKWD')}</th></tr></thead><tbody>${scheduleRows}</tbody></table>` : `<div style="background:#e9ecef; padding:6px; border-radius:10px; text-align:center; font-size:0.7rem;">${t('noScheduleCash')}</div>`}
                 ${acknowledgmentSection}
-                <div style="margin-top: 20px; margin-bottom: 5px; font-size: 0.7rem; text-align: center; color: #5f7a8c; font-weight: bold;">${t('paymentTermsApply')}</div>
+                <div style="margin-top: 12px; margin-bottom: 2px; font-size: 0.6rem; text-align: center; color: #5f7a8c; font-weight: bold;">${t('paymentTermsApply')}</div>
             `;
         }
         function appendHTMLToPages(htmlString) {
@@ -1018,7 +1000,7 @@
         const pagesDivs = Array.from(container.children);
         try {
             for (let idx = 0; idx < pagesDivs.length; idx++) {
-                const canvas = await html2canvas(pagesDivs[idx], { scale: 1.9, useCORS: true });
+                const canvas = await html2canvas(pagesDivs[idx], { scale: 1.8, useCORS: true });
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
                 if (idx !== 0) pdf.addPage();
