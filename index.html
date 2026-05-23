@@ -162,7 +162,6 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(33,150,243,0.2);
         }
-        /* منع ظهور أسهم في حقول الأرقام */
         input[type=number] {
             -moz-appearance: textfield;
         }
@@ -393,7 +392,6 @@
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 0.8rem;
         }
-        /* Toast رسالة تحذير */
         .toast-warning {
             position: fixed;
             bottom: 30px;
@@ -510,7 +508,7 @@
 </a>
 
 <script>
-    // ========== التفقيط المطابق ==========
+    // ========== التفقيط ==========
     function numToArabicWords(Num) {
         if (Num === 0) return "صفر";
         let Units = ["", "واحد", "اثنان", "ثلاثة", "أربعة", "خمسة", "ستة", "سبعة", "ثمانية", "تسعة"];
@@ -602,6 +600,24 @@
         });
     }
 
+    // تنسيق التاريخ إلى DD-MM-YYYY بأرقام إنجليزية
+    function formatDateToEnglishDMY(dateObj) {
+        if (!dateObj || isNaN(dateObj.getTime())) return "";
+        let day = dateObj.getDate().toString().padStart(2, '0');
+        let month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+        let year = dateObj.getFullYear();
+        return `${day}-${month}-${year}`;
+    }
+
+    function formatDateFromInput(dateString) {
+        if (!dateString) return null;
+        let parts = dateString.split('-');
+        if (parts.length === 3) {
+            return new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+        }
+        return null;
+    }
+
     // ========== الترجمة ==========
     const translations = {
         ar: {
@@ -652,6 +668,8 @@
             contractDate: "تاريخ العقد",
             warningInvalidCivil: "⚠️ الرقم المدني يجب أن يكون 12 رقمًا (أو اتركه فارغًا)",
             warningInvalidPhone: "⚠️ رقم الهاتف يجب أن يكون 8 أرقام (أو اتركه فارغًا)",
+            warningEmptyCivil: "⚠️ لم يتم إدخال الرقم المدني",
+            warningEmptyPhone: "⚠️ لم يتم إدخال رقم الهاتف",
             warningTitle: "تنبيه"
         },
         en: {
@@ -702,6 +720,8 @@
             contractDate: "Contract Date",
             warningInvalidCivil: "⚠️ Civil ID must be 12 digits (or leave empty)",
             warningInvalidPhone: "⚠️ Phone number must be 8 digits (or leave empty)",
+            warningEmptyCivil: "⚠️ Civil ID not entered",
+            warningEmptyPhone: "⚠️ Phone number not entered",
             warningTitle: "Warning"
         }
     };
@@ -748,13 +768,13 @@
             sumOfInstallments += installmentValue;
             const dueDate = new Date(startDate);
             dueDate.setMonth(dueDate.getMonth() + (i - 1));
-            schedule.push({ number: i, dueDate: `${dueDate.getDate().toString().padStart(2,'0')}/${(dueDate.getMonth()+1).toString().padStart(2,'0')}/${dueDate.getFullYear()}`, amount: installmentValue });
+            schedule.push({ number: i, dueDate: formatDateToEnglishDMY(dueDate), amount: installmentValue });
         }
         let lastInstallment = remaining - sumOfInstallments;
         if (lastInstallment < 0) lastInstallment = 0;
         const lastDate = new Date(startDate);
         lastDate.setMonth(lastDate.getMonth() + (installmentsCount - 1));
-        schedule.push({ number: installmentsCount, dueDate: `${lastDate.getDate().toString().padStart(2,'0')}/${(lastDate.getMonth()+1).toString().padStart(2,'0')}/${lastDate.getFullYear()}`, amount: lastInstallment });
+        schedule.push({ number: installmentsCount, dueDate: formatDateToEnglishDMY(lastDate), amount: lastInstallment });
         return schedule;
     }
     function getEffectiveStartDate(processDateValue, manualDateValue) {
@@ -784,31 +804,33 @@
         setTimeout(() => { if(toast) toast.remove(); }, 4000);
     }
 
-    // التحقق من صحة الرقم المدني والهاتف قبل PDF
-    function validateIdsForExport() {
+    // التحقق مع ظهور رسائل تحذير: إذا كان الحقل فارغًا نعرض تحذير ونسمح. إذا كان مكتوبًا جزئيًا وخطأ نمنع.
+    function validateAndWarnForExport() {
         let civil = document.getElementById('civilId').value.trim();
         let phone = document.getElementById('phoneNumber').value.trim();
         let isValid = true;
-        let warningMsg = "";
+        let warningMessages = [];
 
-        // إذا كان الحقل غير فارغ، يجب أن يكون 12 رقماً
-        if(civil !== "") {
-            if(!/^\d{12}$/.test(civil)) {
-                isValid = false;
-                warningMsg = t('warningInvalidCivil');
-            }
+        // فحص الرقم المدني
+        if(civil === "") {
+            warningMessages.push(t('warningEmptyCivil'));
+        } else if(!/^\d{12}$/.test(civil)) {
+            isValid = false;
+            warningMessages.push(t('warningInvalidCivil'));
         }
-        if(phone !== "") {
-            if(!/^\d{8}$/.test(phone)) {
-                isValid = false;
-                warningMsg = warningMsg ? warningMsg + " / " + t('warningInvalidPhone') : t('warningInvalidPhone');
-            }
+
+        // فحص الهاتف
+        if(phone === "") {
+            warningMessages.push(t('warningEmptyPhone'));
+        } else if(!/^\d{8}$/.test(phone)) {
+            isValid = false;
+            warningMessages.push(t('warningInvalidPhone'));
         }
-        if(!isValid) {
-            showToast(warningMsg);
-            return false;
+
+        if(warningMessages.length > 0) {
+            showToast(warningMessages.join(" / "));
         }
-        return true;
+        return isValid;
     }
 
     function updateCalculationAndDisplay() {
@@ -817,12 +839,17 @@
         const civilId = document.getElementById('civilId').value.trim();
         const phoneNumber = document.getElementById('phoneNumber').value.trim();
         const contractNumber = document.getElementById('contractNumber').value.trim();
-        const processDate = document.getElementById('processStartDate').value;
-        const manualDate = document.getElementById('firstInstallmentDate').value;
-        const effectiveStart = getEffectiveStartDate(processDate, manualDate);
-        const startDateStr = `${effectiveStart.getDate().toString().padStart(2,'0')}/${(effectiveStart.getMonth()+1).toString().padStart(2,'0')}/${effectiveStart.getFullYear()}`;
+        const processDateValue = document.getElementById('processStartDate').value;
+        const manualDateValue = document.getElementById('firstInstallmentDate').value;
+        
+        let contractDateObj = processDateValue ? formatDateFromInput(processDateValue) : new Date();
+        let contractDateFormatted = formatDateToEnglishDMY(contractDateObj);
+        
+        const effectiveStart = getEffectiveStartDate(processDateValue, manualDateValue);
+        const startDateStr = formatDateToEnglishDMY(effectiveStart);
+        
         const today = new Date();
-        const todayFormatted = `${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}`;
+        const todayFormatted = formatDateToEnglishDMY(today);
         
         let paymentMethod = '', installmentsCount = 0, downPaymentAmount = 0, downPercentageText = '', schedule = [];
         const isEligible = totalAmount > PAYMENT_THRESHOLD;
@@ -847,7 +874,7 @@
         lastCalcData = {
             clientName: clientName || t('emptyNameFallback'),
             civilId, phoneNumber, contractNumber,
-            contractDate: processDate ? new Date(processDate).toLocaleDateString(currentLang === 'ar' ? 'ar-KW' : 'en-GB') : todayFormatted,
+            contractDate: contractDateFormatted,
             totalAmount,
             paymentMethod,
             installmentsCount,
@@ -907,10 +934,11 @@
         `;
     }
     
-    // PDF export مع التحقق المسبق
+    // PDF export مع التحقق ورسائل التحذير
     async function exportFullPDF() {
-        // التحقق من صحة الرقم المدني والهاتف
-        if(!validateIdsForExport()) return;
+        // التحقق من صحة الرقم المدني والهاتف مع ظهور رسائل تحذير
+        const isValid = validateAndWarnForExport();
+        if (!isValid) return; // منع التصدير إذا كان هناك خطأ في الأرقام (غير فارغة وطول غير صحيح)
         
         updateCalculationAndDisplay();
         await new Promise(r => setTimeout(r, 80));
@@ -1001,7 +1029,6 @@
         finally { document.body.removeChild(container); }
     }
     
-    // منع إدخال حروف في الرقم المدني والهاتف
     function restrictNumericInput(e) {
         let input = e.target;
         let val = input.value;
@@ -1011,7 +1038,6 @@
         input.value = val;
     }
     
-    // Translations & UI binding
     function translateStaticElements() {
         const tText = translations[currentLang];
         document.title = tText.pageTitle;
@@ -1045,12 +1071,19 @@
     }
     function setDefaultDates() {
         const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2,'0');
-        const dd = String(today.getDate()).padStart(2,'0');
-        if (!document.getElementById('processStartDate').value) document.getElementById('processStartDate').value = `${yyyy}-${mm}-${dd}`;
+        if (!document.getElementById('processStartDate').value) {
+            let yyyy = today.getFullYear();
+            let mm = String(today.getMonth() + 1).padStart(2,'0');
+            let dd = String(today.getDate()).padStart(2,'0');
+            document.getElementById('processStartDate').value = `${yyyy}-${mm}-${dd}`;
+        }
         const nextMonthFirst = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-        if (!document.getElementById('firstInstallmentDate').value) document.getElementById('firstInstallmentDate').value = `${nextMonthFirst.getFullYear()}-${String(nextMonthFirst.getMonth()+1).padStart(2,'0')}-${String(nextMonthFirst.getDate()).padStart(2,'0')}`;
+        if (!document.getElementById('firstInstallmentDate').value) {
+            let yyyy = nextMonthFirst.getFullYear();
+            let mm = String(nextMonthFirst.getMonth() + 1).padStart(2,'0');
+            let dd = String(nextMonthFirst.getDate()).padStart(2,'0');
+            document.getElementById('firstInstallmentDate').value = `${yyyy}-${mm}-${dd}`;
+        }
     }
     function bindAutoUpdate() {
         ['clientName','civilId','phoneNumber','contractNumber','totalAmount','processStartDate','firstInstallmentDate'].forEach(id => {
@@ -1059,7 +1092,6 @@
         });
         document.getElementById('calculateBtn').addEventListener('click', updateCalculationAndDisplay);
         document.getElementById('exportPdfBtn').addEventListener('click', exportFullPDF);
-        // حصر الأرقام
         document.getElementById('civilId').addEventListener('input', restrictNumericInput);
         document.getElementById('phoneNumber').addEventListener('input', restrictNumericInput);
     }
